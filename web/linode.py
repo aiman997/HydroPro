@@ -16,7 +16,7 @@ cache = redis.StrictRedis(host='redis', port=6379)
 app.logger.addHandler(logging.StreamHandler(sys.stdout))
 app.logger.setLevel(logging.DEBUG)
 
-def PgFetch(query,PHstatus, PHvalue, ECstatus ,ECvalue , TEMPstatus, TEMPvalue, PUMPstatus, ECUPstatus, PHUPstatus, PHDOWNstatus, method):
+def PgFetch(query, method):
 
     # Connect to an existing database
     conn = psycopg2.connect("host='postgres' dbname='hydrodb' user='postgres' password='eamon2hussien'")
@@ -25,7 +25,7 @@ def PgFetch(query,PHstatus, PHvalue, ECstatus ,ECvalue , TEMPstatus, TEMPvalue, 
     cur = conn.cursor()
 
     # Query the database and obtain data as Python objects
-    dbquery = cur.execute(query,(PHstatus, PHvalue, ECstatus ,ECvalue , TEMPstatus, TEMPvalue, PUMPstatus, ECUPstatus, PHUPstatus, PHDOWNstatus))
+    dbquery = cur.execute(query)
 
     if method == 'GET':
         result = cur.fetchall()
@@ -77,7 +77,6 @@ def datab():
     cur.close()
     conn.close()
     app.logger.debug(result)
-	# dbquery=db.execute('''SELECT * FROM hydro.hydrotable order by ID''')
     return render_template("database.html", result=result)
 
 
@@ -90,7 +89,6 @@ def index():
         if request.form.get('PHup_ON') == 'PHup_ON':
             x = requests.post(URL, data = '{"action": "waterON"}')
             app.logger.debug(x.text)
-            # print(x.text)
             keyvalues = x.text
             values = re.findall("\{(.*?)\}", keyvalues)
             result = []
@@ -101,53 +99,37 @@ def index():
                     result += key_value_pairs
 
             res_dct = {result[i]: result[i + 1] for i in range(0, len(result), 2)}
-            # pprint.pprint(res_dct)
+            query = str ( '''INSERT INTO hydro.hydrotable (
+                TIMEZ,
+                STATUS_PH,
+                READING_PH,
+                STATUS_EC,
+                READING_EC,
+                STATUS_TEMP,
+                READING_TEMP,
+                STATUS_MPUMP,
+                STATUS_ECUP,
+                STATUS_PHUP,
+                STATUS_PHDOWN
+            )
+                VALUES (
+                now(), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+            )'''
+            , res_dct['PH_Status']
+            , res_dct['PH_Reading']
+            , res_dct['EC_Status']
+            , res_dct['EC_Reading']
+            , res_dct['TEMP_Status']
+            , res_dct['TEMP_Reading']
+            , res_dct['PUMP_Status']
+            , res_dct['ECUP_Status']
+            , res_dct['PHUP_Status']
+            , res_dct['PHDOWN_Status'] )
 
-            for i in res_dct :
-                # app.logger.debug(i, res_dct[i])
-                PHstatus = res_dct['PH_Status']
-                PHvalue = res_dct['PH_Reading']
-                ECstatus = res_dct['EC_Status']
-                ECvalue = res_dct['EC_Reading']
-                TEMPstatus = res_dct['TEMP_Status']
-                TEMPvalue = res_dct['TEMP_Reading']
-                PUMPstatus = res_dct['PUMP_Status']
-                ECUPstatus = res_dct['ECUP_Status']
-                PHUPstatus = res_dct['PHUP_Status']
-                PHDOWNstatus = res_dct['PHDOWN_Status']
-                Timezz='2016-06-22 19:10:25-07'
+            PgFetch(query, "POST")
 
-            app.logger.debug(PHstatus)
-            app.logger.debug(PHvalue)
-            app.logger.debug(ECstatus)
-            app.logger.debug(ECvalue)
-            app.logger.debug(TEMPstatus)
-            app.logger.debug(TEMPvalue)
-            app.logger.debug(PUMPstatus)
-            app.logger.debug(ECUPstatus)
-            app.logger.debug(PHUPstatus)
-            app.logger.debug(PHDOWNstatus)
-
-
-
-
-
-
-            # print(PHstatus)
-            # print(PHvalue)
-
-            # PgFetch('''INSERT INTO hydro.hydrotable (TIMEZ, STATUS_PH, READING_PH, STATUS_EC, READING_EC, STATUS_TEMP, READING_TEMP, STATUS_MPUMP, STATUS_ECUP, STATUS_PHUP, STATUS_PHDOWN)
-            # VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)''',Timezz,PHstatus, PHvalue, ECstatus ,ECvalue , TEMPstatus, TEMPvalue, PUMPstatus, ECUPstatus, PHUPstatus, PHDOWNstatus,"POST")
-
-            PgFetch('''INSERT INTO hydro.hydrotable (TIMEZ, STATUS_PH, READING_PH, STATUS_EC, READING_EC, STATUS_TEMP, READING_TEMP, STATUS_MPUMP, STATUS_ECUP, STATUS_PHUP, STATUS_PHDOWN)
-            VALUES (now(),%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)''',PHstatus, PHvalue, ECstatus ,ECvalue , TEMPstatus, TEMPvalue, PUMPstatus, ECUPstatus, PHUPstatus, PHDOWNstatus,"POST")
-            # ,
-            # (Timezz,PHstatus, PHvalue, ECstatus ,ECvalue , TEMPstatus, TEMPvalue, PUMPstatus, ECUPstatus, PHUPstatus, PHDOWNstatus)), "POST")
-            x = PgFetch('''SELECT * FROM hydro.hydrotable;''',PHstatus, PHvalue, ECstatus ,ECvalue , TEMPstatus, TEMPvalue, PUMPstatus, ECUPstatus, PHUPstatus, PHDOWNstatus, "GET")
+            x = PgFetch('''SELECT * FROM hydro.hydrotable;''', "GET")
             app.logger.debug(x)
-
-
-
 
         elif request.form.get('PHup_OFF') == 'PHup_OFF':
             x = requests.post(URL, data = '{"action": "PHupOFF"}')
@@ -170,11 +152,8 @@ def index():
         elif request.form.get('TempSensor_OFF') == 'TempSensor_OFF':
             x = requests.post(URL, data = '{"action": "TempOFF"}')
 
-        # app.logger.debug(x.text)
-
     elif request.method == 'GET':
         y = requests.get(URL)
-        print(y)
         print("No Post Back Call")
 
     return render_template("index.html")
@@ -182,7 +161,3 @@ def index():
 
 if __name__ == '__main__':
     app.run(debug = True)
-
-
-    # insert into hydro.hydrotable (TIMEZ, STATUS_PH, READING_PH, STATUS_EC, READING_EC, STATUS_TEMP, READING_TEMP, STATUS_MPUMP, STATUS_ECUP, STATUS_PHUP, STATUS_PHDOWN)
-    #   values (now(),'true','5','true','6','true','7','true','true','false','true');
