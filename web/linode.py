@@ -43,6 +43,7 @@ def PgFetch(query,PHstatus, PHvalue, ECstatus ,ECvalue , TEMPstatus, TEMPvalue, 
 def base():
     return render_template('base.html')
 
+<<<<<<< HEAD
 @app.route('/Dashboard')
 def dashboard():
     return render_template('Dashboard.html')
@@ -56,6 +57,8 @@ def img():
 
 
 
+=======
+>>>>>>> d739a48 (docker-nginx-postgres-redis-flaskapp)
 @app.route('/count')
 def hello_world():
     if cache.exists('visitor_count'):
@@ -128,7 +131,11 @@ def index():
                 ECUPstatus = res_dct['ECUP_Status']
                 PHUPstatus = res_dct['PHUP_Status']
                 PHDOWNstatus = res_dct['PHDOWN_Status']
+<<<<<<< HEAD
                 # Timezz='2016-06-22 19:10:25-07'
+=======
+                Timezz='2016-06-22 19:10:25-07'
+>>>>>>> d739a48 (docker-nginx-postgres-redis-flaskapp)
 
             app.logger.debug(PHstatus)
             app.logger.debug(PHvalue)
