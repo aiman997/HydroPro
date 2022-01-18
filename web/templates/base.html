@@ -1,17 +1,16 @@
 <!doctype html>
 <html>
- {% block content %}
-    <head>
-        <title>Hydro</title>
-        <meta charset='utf-8'>
-        <meta name='viewport' content='width=device-width, initial-scale=1'>
-        <link href='https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css' rel='stylesheet'>
-        <link href='' rel='stylesheet'>
-        <script type='text/javascript' src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js'></script>
-        <script type='text/javascript' src='https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.bundle.min.js'></script>
-        <script type='text/javascript'></script>
-    </head>
-    <body oncontextmenu='return false' class='snippet-body'>
+  <head>
+      <title>Hydro</title>
+      <meta charset='utf-8'>
+      <meta name='viewport' content='width=device-width, initial-scale=1'>
+      <link href='https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css' rel='stylesheet'>
+      <link href='' rel='stylesheet'>
+      <script type='text/javascript' src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js'></script>
+      <script type='text/javascript' src='https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.bundle.min.js'></script>
+      <script type='text/javascript'></script>
+  </head>
+    <body class='snippet-body'>
       <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <a class="navbar-brand" href="/" data-abc="true">HydroPro</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarColor02" aria-controls="navbarColor02" aria-expanded="false" aria-label="Toggle navigation">
@@ -21,17 +20,15 @@
           <ul class="navbar-nav mr-auto">
             <li class="nav-item active"> <a class="nav-link" href="/ControlPanel" data-abc="true">ControlPanel <span class="sr-only">(current)</span></a> </li>
             <li class="nav-item"> <a class="nav-link" href="/database" data-abc="true">DataList</a> </li>
-            <li class="nav-item"> <a class="nav-link" href="#" data-abc="true">All Books</a> </li>
             <!-- <li class="nav-item"> <a class="nav-link" href="#" data-abc="true">Social</a> </li> -->
           </ul>
-
-    </div>
-</nav>
+        </div>
+      </nav>
+        <div class="container-md">
+          {% block content %}
+          {% endblock %}
     </body>
-{% endblock %}
 </html>
+
 <style>
-body {
-  background-color: grey
-  }
 </style>

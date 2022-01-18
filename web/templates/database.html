@@ -1,50 +1,41 @@
-<!DOCTYPE html>
-<html>
-<head>
-
-</head>
-<body>
-
-  {% extends "base.html" %}
-     {% block content %}
-         {{ super() }}
-
-  <table class="table">
-    <thead>
-      <tr>
-        <th scope="col">#</th>
-        <th scope="col">Timezz</th>
-        <th scope="col">PHstatus</th>
-        <th scope="col">PHvalue</th>
-  	    <th scope="col">ECstatus</th>
-  	    <th scope="col">ECvalue</th>
-        <th scope="col">TEMPstatus</th>
-        <th scope="col">TEMPvalue</th>
-        <th scope="col">PUMPstatus</th>
-        <th scope="col">ECUPstatus</th>
-        <th scope="col">PHUPstatus</th>
-        <th scope="col">PHDOWNstatus</th>
-      </tr>
-    </thead>
-    {% for row in result %}
-    <tr>
-      <td>{{row[0]}}</td>
-      <td>{{row[1]}}</td>
-      <td>{{row[2]}}</td>
-      <td>{{row[3]}}</td>
-      <td>{{row[4]}}</td>
-      <td>{{row[5]}}</td>
-      <td>{{row[6]}}</td>
-      <td>{{row[7]}}</td>
-      <td>{{row[8]}}</td>
-      <td>{{row[9]}}</td>
-      <td>{{row[10]}}</td>
-      <td>{{row[11]}}</td>
-      <td>{{row[12]}}</td>
-    </tr>
-    {% endfor %}
-  </table>
-
-{% endblock %}
-</body>
-</html>
+{% extends "base.html" %}
+    {% block content %}
+    <div class="container-fluid pt-5">
+      <div class="col-md">
+          <table class="table table-hover table-bordered table-striped">
+            <thead>
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">Timezz</th>
+                <th scope="col">PHstatus</th>
+                <th scope="col">PHvalue</th>
+                <th scope="col">ECstatus</th>
+                <th scope="col">ECvalue</th>
+                <th scope="col">TEMPstatus</th>
+                <th scope="col">TEMPvalue</th>
+                <th scope="col">PUMPstatus</th>
+                <th scope="col">ECUPstatus</th>
+                <th scope="col">PHUPstatus</th>
+                <th scope="col">PHDOWNstatus</th>
+              </tr>
+            </thead>
+            {% for row in result %}
+            <tr>
+              <td>{{row[0]}}</td>
+              <td>{{row[1]}}</td>
+              <td>{{row[2]}}</td>
+              <td>{{row[3]}}</td>
+              <td>{{row[4]}}</td>
+              <td>{{row[5]}}</td>
+              <td>{{row[6]}}</td>
+              <td>{{row[7]}}</td>
+              <td>{{row[8]}}</td>
+              <td>{{row[9]}}</td>
+              <td>{{row[10]}}</td>
+              <td>{{row[11]}}</td>
+            </tr>
+            {% endfor %}
+          </table>
+        </div>
+      </div>
+    {% endblock %}

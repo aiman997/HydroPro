@@ -1,5 +1,6 @@
-flask
+flask[async]
 gunicorn
-psycopg2-binary
-redis
-requests
+aiohttp
+aioredis
+asyncpg
+asyncio

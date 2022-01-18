@@ -1,28 +1,92 @@
 <!DOCTYPE html>
-<html>
-<head>
-  
-</head>
-<body>
-  {% extends "base.html" %}
-     {% block content %}
-         {{ super() }}
+{% extends "base.html" %}
+{% block content %}
 
 <h1 style="text-align:center">HydroPro Control Panel</h1>
-<form align="center" method="post" >
-  <input type="submit" name="PHup_ON" value="PHup_ON">
-  <input type="submit" name="PHup_OFF" value="PHup_OFF">
-  <input type="submit" name="PHdown_ON" value="PHdown_ON">
-  <input type="submit" name="PHdown_OFF" value="PHdown_OFF">
-  <input type="submit" name="EC_ON" value="EC_ON">
-  <input type="submit" name="EC_OFF" value="EC_OFF">
-  <input type="submit" name="TempSensor_ON" value="TempSensor_ON">
-  <input type="submit" name="TempSensor_OFF" value="TempSensor_OFF">
+<div class="container-fluid pt-5">
+  <div class="card-deck">
+    <div class="card" style="width: 18rem;">
+      <div class="card-body">
+        <h5 class="card-title">Special title treatment</h5>
+        <p class="card-text">With supporting text below as a natural lead-in to additional content.</p>
+        <form align="center" method="post" >
+          <input type="submit" name="PHup_ON" value="PHup_ON">
+        </form>
+      </div>
+    </div>
 
+    <div class="card" style="width: 18rem;">
+      <div class="card-body">
+        <h5 class="card-title">Special title treatment</h5>
+        <p class="card-text">With supporting text below as a natural lead-in to additional content.</p>
+        <form align="center" method="post" >
+          <input type="submit" name="PHup_OFF" value="PHup_OFF">
+        </form>
+      </div>
+    </div>
 
+    <div class="card" style="width: 18rem;">
+      <div class="card-body">
+        <h5 class="card-title">Special title treatment</h5>
+        <p class="card-text">With supporting text below as a natural lead-in to additional content.</p>
+        <form align="center" method="post" >
+          <input type="submit" name="PHdown_ON" value="PHdown_ON">
+        </form>
+      </div>
+    </div>
 
-</form>
+    <div class="card" style="width: 18rem;">
+      <div class="card-body">
+        <h5 class="card-title">Special title treatment</h5>
+        <p class="card-text">With supporting text below as a natural lead-in to additional content.</p>
+        <form align="center" method="post" >
+          <input type="submit" name="PHdown_OFF" value="PHdown_OFF">
+        </form>
+      </div>
+    </div>
+  </div>
+  <br>
+  <div class="card-deck">
+    <div class="card" style="width: 18rem;">
+      <div class="card-body">
+        <h5 class="card-title">Special title treatment</h5>
+        <p class="card-text">With supporting text below as a natural lead-in to additional content.</p>
+        <form align="center" method="post" >
+          <input type="submit" name="EC_ON" value="EC_ON">
+        </form>
+      </div>
+    </div>
 
-  {% endblock %}
-</body>
-</html>
+    <div class="card" style="width: 18rem;">
+      <div class="card-body">
+        <h5 class="card-title">Special title treatment</h5>
+        <p class="card-text">With supporting text below as a natural lead-in to additional content.</p>
+        <form align="center" method="post" >
+          <input type="submit" name="EC_OFF" value="EC_OFF">
+        </form>
+      </div>
+    </div>
+
+    <div class="card" style="width: 18rem;">
+      <div class="card-body">
+        <h5 class="card-title">Special title treatment</h5>
+        <p class="card-text">With supporting text below as a natural lead-in to additional content.</p>
+        <form align="center" method="post" >
+          <input type="submit" name="TempSensor_ON" value="TempSensor_ON">
+        </form>
+      </div>
+    </div>
+
+    <div class="card" style="width: 18rem;">
+      <div class="card-body">
+        <h5 class="card-title">Special title treatment</h5>
+        <p class="card-text">With supporting text below as a natural lead-in to additional content.</p>
+        <form align="center" method="post" >
+          <input type="submit" name="TempSensor_OFF" value="TempSensor_OFF">
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
