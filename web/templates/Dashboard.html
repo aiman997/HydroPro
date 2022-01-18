@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>Dashboard</title>
+    <link rel="stylesheet" type="text/css" href="
+    https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
+    media ="all"/>
+    <!-- <link rel="stylesheet" href="../static/style.css" /> -->
+    <link rel="stylesheet" href="{{ url_for('static',filename='style.css') }}">
+    <!-- <link rel="stylesheet" type="text/css" href="/static/style.css" media="all"> -->
+  </head>
+  <body>
+
+    <div class="container">
+      <div class="card">
+        <div class="front">
+          <img src="../static/PH-Meter.png" alt=""/>
+          <h1>PH</h1>
+        </div>
+        <div class="back">
+          <h1>calibrate sensor</h1>
+          <p>PH METER CALIBRATION</p>
+          <div class ="contact">
+            <i class="fa fa-facebook"></i>
+          </div>
+        </div>
+      </div>
+      <p class="flip">Click to Flip</p>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js">
+    </script>
+
+    <script>
+      $(".container").on("click", function(){
+        $(".card").toggleClass("flipping");
+      });
+    </script>
+
+  </body>
+</html>
