@@ -62,7 +62,7 @@ services:
 
    environment:
      URL: 'http://192.168.101.26:80'
-     PYTHONASYNCIODEBUG: true
+     PYTHONASYNCIODEBUG: 1
 
    deploy:
      mode: replicated
