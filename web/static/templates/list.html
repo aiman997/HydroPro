@@ -1,0 +1,49 @@
+<!doctype html>
+<html>
+<head>
+  <title>All Books</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+</head>
+<body>
+  {% extends "base.html" %}
+  {% block content %}
+      {{ super() }}
+  <div class="container">
+    <table class="table table-hover table-striped table-dark">
+      <thead class="thead-dark">
+        <tr  class="font-weight-bold">
+          <td>Book ID</td>
+          <td>Name Of The Book</td>
+          <td>Enter The placement Of The Book</td>
+          <td>Author's Name</td>
+          <td>Year Of Publish</td>
+        </tr>
+      </thead>
+      <tbody>
+      {% for row in rows %}
+         <tr>
+            <td>{{row["id"]}}</td>
+            <td>{{row["name"]}}</td>
+            <td>{{row["place"]}}</td>
+            <td> {{ row["authname"]}}</td>
+            <td>{{row["publish"]}}</td>
+         </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="container">
+    <div class="alert alert-dark" role="alert">
+      <h4 class="alert-heading">This Is The End Of The List!</h4>
+  <p>you successfully read this important alert message.</p>
+
+    </div>
+    <button type="button" class="btn btn-dark" href="/"> <a href = "/"> Go back to 🏠 page </a></button>
+  </div>
+  {% endblock %}
+</body>
+</html>

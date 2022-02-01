@@ -10,6 +10,11 @@ import logging
 import asyncio
 import asyncpg
 import aioredis
+import aiohttp
+
+URL = 'http://10.243.199.34:5000'
+Path = ""
+res_dct = ()
 
 app = Flask(__name__)
 redis = aioredis.from_url("redis://redis", db=1)
@@ -18,6 +23,18 @@ pubsub = redis.pubsub()
 # Configure Logging
 app.logger.addHandler(logging.StreamHandler(sys.stdout))
 app.logger.setLevel(logging.DEBUG)
+
+async def fetch(Path):
+    logging.warning("IM IN fetch")
+    async with aiohttp.ClientSession() as session:
+        try:
+            async with session.get(URL + Path) as resp:
+                keyvalues = await resp.text()
+                logging.warning(resp)
+		        # logging.warning(keyvalues)
+                return keyvalues
+        except Exception as e:
+            logging.warning(e)
 
 async def Pgfetch(query):
     conn = await asyncpg.connect(host='postgres', database='hydrodb', user='postgres', password='eamon2hussien')
@@ -31,9 +48,13 @@ async def base():
 
 @app.route('/Dashboard')
 async def dashboard():
-    data = await redis.get("Plant::Data")
-    if data is not None:
-        logging.warning(json.loads(data.decode('utf-8')))
+#    try:
+#        data = await redis.get("Plant::Data")
+#        if data is not None:
+#            logging.info(json.loads(data.decode('utf-8')))
+#    except Exception as e:
+#        logging.info(e)
+# here we need a graph/
     return render_template('Dashboard.html')
 
 @app.route('/Cards')
@@ -47,15 +68,32 @@ async def datab():
 
 @app.route('/ControlPanel', methods=['GET', 'POST'])
 async def index():
+    PH_Reading = await Pgfetch('''SELECT READING_PH FROM hydro.hydrotable LIMIT 1''')
+    PHREADING = re.findall("\=(.*)\>", str(PH_Reading))
+    logging.warning(PH_Reading)
+    logging.warning(PHREADING)
+
+    EC_Reading = await Pgfetch('''SELECT READING_PH FROM hydro.hydrotable LIMIT 1''')
+    ECREADING = re.findall("\=(.*)\>", str(EC_Reading))
+    logging.warning(EC_Reading)
+    logging.warning(ECREADING)
+
     if request.method == 'POST':
-        if request.form.get('PHup_ON') == 'PHup_ON':
-            await redis.publish("Plant::Controls", '{"action": "PHupON"}')
+        if request.form.get('PH_ON') == 'PH_ON':
+            await redis.publish("Plant::Control", '{"W":"true"}')
+            res_dct = await fetch('/PHon')
+            logging.warning(res_dct)
 
-        elif request.form.get('PHup_OFF') == 'PHup_OFF':
-            await redis.publish("Plant::Controls", '{"action": "PHupOFF"}')
+        elif request.form.get('PH_OFF') == 'PH_OFF':
+            await redis.publish("Plant::Controls", '{"action": "POFF"}')
+            res_dct = await fetch('/PHoff')
+            logging.warning(res_dct)
 
-        elif request.form.get('PHdown_ON') == 'PHdown_ON':
+        elif request.form.get('EC_ON') == 'EC_ON':
             await redis.publish("Plant::Controls", '{"action": "PHdownON"}')
+
+        elif request.form.get('EC_OFF') == 'EC_OFF':
+            await redis.publish("Plant::Controls", '{"action": "EC_OFF"}')
 
         elif request.form.get('PHdown_OFF') == 'PHdown_OFF':
             await redis.publish("Plant::Controls", '{"action": "PHdownOFF"}')
@@ -75,7 +113,7 @@ async def index():
     elif request.method == 'GET':
         print("No Post Back Call")
 
-    return render_template("index.html")
+    return render_template("index.html", PHREADING=PHREADING , ECREADING=ECREADING)
 
 
 if __name__ == '__main__':

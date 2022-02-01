@@ -1,0 +1,41 @@
+<!doctype html>
+<html>
+ {% block content %}
+    <head>
+        <title>Book Manager</title>
+        <meta charset='utf-8'>
+        <meta name='viewport' content='width=device-width, initial-scale=1'>
+        <link href='https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css' rel='stylesheet'>
+        <link href='' rel='stylesheet'>
+        <script type='text/javascript' src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js'></script>
+        <script type='text/javascript' src='https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.bundle.min.js'></script>
+        <script type='text/javascript'></script>
+    </head>
+    <body oncontextmenu='return false' class='snippet-body'>
+      <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="/" data-abc="true">Book Organiser</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarColor02" aria-controls="navbarColor02" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarColor02">
+          <ul class="navbar-nav mr-auto">
+            <li class="nav-item active"> <a class="nav-link" href="/home" data-abc="true">Home <span class="sr-only">(current)</span></a> </li>
+            <li class="nav-item"> <a class="nav-link" href=addnew data-abc="true">New Book</a> </li>
+            <li class="nav-item"> <a class="nav-link" href=list data-abc="true">All Books</a> </li>
+            <!-- <li class="nav-item"> <a class="nav-link" href="#" data-abc="true">Social</a> </li> -->
+        </ul>
+        <form class="form-inline my-2 my-lg-0" method="POST" action = "{{ url_for('search') }}">
+          <div class="md-form my-0">
+            <input class="form-control mr-sm-2" type="text" placeholder="Search" aria-label="Search" name="Search">
+          </div>
+        </form>
+    </div>
+</nav>
+    </body>
+{% endblock %}
+</html>
+<style>
+body {
+  background-color: grey
+  }
+</style>

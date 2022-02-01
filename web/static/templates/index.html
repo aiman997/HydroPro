@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script>
+$(document).ready(function(){
+  $("#hoo").click(function(){
+    $.post("http://192.168.101.26",
+    '{"action": "on"}',
+    function(data,status){
+      alert("Data: " + data + "\nStatus: " + status);
+    });
+  });
+});
+$(document).ready(function(){
+  $("#foo").click(function(){
+    $.post("http://192.168.101.26",
+    '{"action": "off"}',
+    function(data,status){
+      alert("Data: " + data + "\nStatus: " + status);
+    });
+  });
+});
+
+
+
+
+</script>
+</head>
+<body>
+
+<!-- <button>LED ON</button>
+<button>LED OFF</button> -->
+<button id="hoo">LED ON</button>
+<button id="hoo">LED OFF</button>
+<!-- <button type="button" onclick="my_button_click_handler">Click this button</button>
+<button type="button1" onclick="my_button_click">Click this button</button> -->
+
+
+
+<!-- <form method="post" action="/">
+    <input type="submit" value="VALUE1" name="action1"/>
+    <input type="submit" value="VALUE2" name="action2" />
+</form> -->
+
+</body>
+</html>
