@@ -41,7 +41,9 @@ async def fetch(route):
     async with aiohttp.ClientSession() as session:
         try:
             resp = await session.get(URL+route)
-            return await resp.text()
+            response = await resp.text()
+            if (response != None):
+                return response 
         except Exception as e:
             logging.warning('ERROR WHILE FETCHING DATA: '+str(e))
 
@@ -54,11 +56,14 @@ async def appendkeys(res_dct):
 async def processdata():
     try:
         res_str = await fetch('/Tick')
-        res_dct = json.loads(res_str)
-        await appendkeys(res_dct)
-        await redis.set('Plant::Data', json.dumps(res_dct))
-        logging.info('PUBLISHED Plant::Data \t' + time.strftime("%I:%M:%S %p ", time.localtime()) + json.dumps(res_dct, indent=4))
-        await record(res_dct)
+        if (res_str != None):
+            res_dct = json.loads(res_str)
+            await appendkeys(res_dct)
+            await redis.set('Plant::Data', json.dumps(res_dct))
+            logging.info('PUBLISHED Plant::Data \t' + time.strftime("%I:%M:%S %p ", time.localtime()) + json.dumps(res_dct, indent=4))
+            await record(res_dct)
+        else:
+            sys.exit('None data to process')
     except Exception as e:
         logging.warning('ERROR WHILE PROCESSING DATA: '+str(e))
 
