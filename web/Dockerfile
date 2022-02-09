@@ -10,4 +10,4 @@ COPY requirements.txt /home/flask/app/web
 RUN pip install --no-cache-dir -r requirements.txt
 RUN chown -R flask:flaskgroup /home/flask
 USER flask
-ENTRYPOINT ["/usr/local/bin/gunicorn", "--bind", ":8000", "hydro:app", "--reload", "--workers", "16"]
+ENTRYPOINT ["/usr/local/bin/gunicorn", "--bind", ":8000", "hydro:app", "--reload", "--workers", "1"]

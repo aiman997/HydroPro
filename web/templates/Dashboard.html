@@ -7,12 +7,43 @@
     https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
     media ="all"/>
     <!-- <link rel="stylesheet" href="../static/style.css" /> -->
-    <link rel="stylesheet" href="{{ url_for('static',filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static',filename='card.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static',filename='card.js') }}">
+    <!-- <script src="{{url_for('static', filename='card.js')}}"></script> -->
     <!-- <link rel="stylesheet" type="text/css" href="/static/style.css" media="all"> -->
   </head>
   <body>
 
-    <div class="container">
+    <div class="progress">
+      <div class="barOverflow">
+        <div class="bar"></div>
+      </div>
+      <span>10</span>%
+    </div>
+
+    <div class="progress">
+      <div class="barOverflow">
+        <div class="bar"></div>
+      </div>
+      <span>100</span>%
+    </div>
+
+    <div class="progress">
+      <div class="barOverflow">
+        <div class="bar"></div>
+      </div>
+      <span>34</span>%
+    </div>
+
+    <div class="progress">
+      <div class="barOverflow">
+        <div class="bar"></div>
+      </div>
+      <span>56.5</span>%
+    </div>
+
+
+    <!-- <div class="container">
       <div class="card">
         <div class="front">
           <img src="../static/PH-Meter.png" alt=""/>
@@ -35,7 +66,7 @@
       $(".container").on("click", function(){
         $(".card").toggleClass("flipping");
       });
-    </script>
+    </script> -->
 
-  </body>
+    </body>
 </html>
