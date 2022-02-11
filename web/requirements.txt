@@ -4,4 +4,3 @@ aiohttp
 aioredis
 asyncpg
 asyncio
-matplotlib

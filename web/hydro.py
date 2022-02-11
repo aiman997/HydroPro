@@ -11,11 +11,7 @@ import asyncio
 import asyncpg
 import aioredis
 import aiohttp
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-from matplotlib.figure import Figure
 import random
-import numpy as np
 import io
 import base64
 
@@ -86,25 +82,7 @@ async def plotView():
         tses.append(rec[0])
         ucounts.append(rec[1])
 
-    fig = Figure()
-    axis = fig.add_subplot(1, 1, 1)
-    axis.set_title("PH vs TIME")
-    axis.set_xlabel("TIME")
-    axis.set_ylabel("PH")
-    axis.grid()
-
-    # axis.plot(range(5), range(5), "ro-")
-    axis.plot(tses, ucounts, color='blue', label="ro-")#User Count
-
-    # Convert plot to PNG image
-    pngImage = io.BytesIO()
-    FigureCanvas(fig).print_png(pngImage)
-
-    # Encode PNG image to base64 string
-    pngImageB64String = "data:image/png;base64,"
-    pngImageB64String += base64.b64encode(pngImage.getvalue()).decode('utf8')
-
-    return render_template("plot.html", image=pngImageB64String, data=ucounts)
+    return render_template("plot.html", data=ucounts)
 
 
 @app.route('/Plot')
@@ -121,15 +99,7 @@ async def plot():
         tses.append(rec[0])
         ucounts.append(rec[1])
 
-    ax.plot(tses, ucounts, color='blue', label='User Count')
-
     return render_template('Dashboard.html')
-
-    # Plot = await Pgfetch('''SELECT tstampz, count(DISTINCT(id))
-    #             from hydro
-    #             WHERE tstampz >
-    #             (current_timestamp - INTERVAL '7 days')
-    #             GROUP BY tstampz ORDER BY tstampz;''')
 
 @app.route('/Cards')
 async def cards():
@@ -140,11 +110,10 @@ async def datab():
     result = await Pgfetch('''SELECT * FROM hydro.hydrotable order by ID desc LIMIT 100''')
     return render_template("database.html", result=result)
 
-
-
 @app.route('/ControlPanel', methods=['GET', 'POST'])
 async def index():
     if request.method == 'POST':
+        logging.critical("index")
         if request.form.get('PH_ON') == 'PH_ON':
             await pubControls('/PHon')
 
@@ -152,7 +121,7 @@ async def index():
             await pubControls('/PHoff')
 
         elif request.form.get('PH_READ') == 'PH_READ':
-            await pubControls('/Tick')
+            await pubControls('/ECPHRead')
 
         elif request.form.get('EC_ON') == 'ON':
             await pubControls('/ECon')

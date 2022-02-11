@@ -78,7 +78,7 @@ async def main():
             msgdata = msg.get('data')
             res_dct = await fetch(msgdata.decode())
             logging.info(' IN FROM FLASK ' + time.strftime("%I:%M:%S %p ", time.localtime()) + json.dumps(res_dct, indent = 4))
-        await asyncio.sleep(60)
+        await asyncio.sleep(30)
 
 if __name__ == '__main__':
     asyncio.run(main())
