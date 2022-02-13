@@ -68,6 +68,33 @@ services:
      mode: replicated
      replicas: 1
 
+ sub:
+   # build the Dockerfile that is in the web directory: http://bit.ly/2BpBPXq
+   build: ./subscriber
+   # always restart the container regardless of the exit status; try and restart the container indefinitely
+   restart: always
+   expose:
+     - "8003"
+   volumes:
+     - ./subscriber:/home/flask/app/subscriber
+   # don't create this container until the redis and postgres containers (below) have been created
+   depends_on:
+     - redis
+     - postgres
+   # link the redis and postgres containers together so that they can talk to one another
+   links:
+     - redis
+     - postgres
+
+   environment:
+     URL: 'http://192.168.101.26:80'
+     PYTHONASYNCIODEBUG: 1
+
+   deploy:
+     mode: replicated
+     replicas: 1
+
+
  # defining the redis NGINX forward proxy container for our web application
  nginx:
 

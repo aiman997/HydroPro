@@ -8,6 +8,7 @@ import pprint
 import json
 import logging
 import asyncio
+import async_timeout
 import asyncpg
 import aioredis
 import aiohttp
@@ -20,24 +21,27 @@ URL = 'http://10.243.199.34:5000'
 redis = aioredis.from_url("redis://redis", db=1)
 pubsub = redis.pubsub()
 app.logger.addHandler(logging.StreamHandler(sys.stdout))
-app.logger.setLevel(logging.INFO)
+app.logger.setLevel(logging.DEBUG)
 
 async def Pgfetch(query):
-    result = None
-    while result == None:
+    while True:
         try:
-            conn = await asyncpg.connect(host='postgres', database='hydrodb', user='postgres', password='eamon2hussien')
-            result = await conn.fetch(query)
-            await conn.close()
-            return result
+            async with async_timeout.timeout(1):
+                conn = await asyncpg.connect(host='postgres', database='hydrodb', user='postgres', password='eamon2hussien')
+                result = await conn.fetch(query)
+                if result is not None:
+                    await conn.close()
+                    return result
         except Exception as e:
             logging.warning('FROM POSTGRES' + e)
 
 async def pubControls (data):
-    try:
-        return await redis.publish("Plant::Controls", data)
-    except Exception as e:
-        logging.warning(e)
+    while True:
+        try:
+            async with async_timeout.timeout(1):
+                await redis.publish("Plant::Controls", data)
+        except Exception as e:
+            logging.warning("WHILE PUBLISHING CONTROLS"+str(e))
 
 @app.route('/')
 async def base():
@@ -113,48 +117,17 @@ async def datab():
 @app.route('/ControlPanel', methods=['GET', 'POST'])
 async def index():
     if request.method == 'POST':
-        logging.critical("index")
-        if request.form.get('PH_ON') == 'PH_ON':
-            await pubControls('/PHon')
-
-        elif request.form.get('PH_OFF') == 'PH_OFF':
-            await pubControls('/PHoff')
-
-        elif request.form.get('PH_READ') == 'PH_READ':
+        if request.form.get('PH_READ') == 'PH_READ':
             await pubControls('/ECPHRead')
-
-        elif request.form.get('EC_ON') == 'ON':
-            await pubControls('/ECon')
-
-        elif request.form.get('EC_OFF') == 'OFF':
-            await pubControls('/ECoff')
 
         elif request.form.get('EC_READ') == 'READ':
             await pubControls('/ECRead')
 
-        elif request.form.get('TEMP_ON') == 'TEMP_ON':
-            await pubControls('/TEMPon')
-
-        elif request.form.get('TEMP_OFF') == 'TEMP_OFF':
-            await pubControls('/TEMPoff')
-
         elif request.form.get('TEMP_READ') == 'TEMP_READ':
             await pubControls('/TEMPRead')
 
-        elif request.form.get('WL_ON') == 'WL_ON':
-            await pubControls('/WLon')
-
-        elif request.form.get('WL_OFF') == 'WL_OFF':
-            await pubControls('/WLoff')
-
         elif request.form.get('WL_READ') == 'WL_READ':
             await pubControls('/WLRead')
-
-        elif request.form.get('MPUMP_ON') == 'MPUMP_ON':
-            await pubControls('/MPUMPon')
-
-        elif request.form.get('MPUMP_OFF') == 'MPUMP_OFF':
-            await pubControls('/MPUMPoff')
 
         elif request.form.get('ECUP_ON') == 'ECUP_ON':
             await pubControls('/ECUPon')
@@ -176,6 +149,7 @@ async def index():
 
     elif request.method == 'GET':
         print("No Post Back Call")
+
     return render_template("index.html", PHREADING=101 , ECREADING=101)
 
 
