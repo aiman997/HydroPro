@@ -12,7 +12,7 @@ import async_timeout
 URL = 'http://10.243.199.34:5000'
 redis = aioredis.from_url("redis://redis", db=1)
 pubsub = redis.pubsub()
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 STOPWORD = "STOP"
 
 async def fetch(route):
@@ -33,18 +33,19 @@ async def reader(channel: aioredis.client.PubSub):
                 message = await channel.get_message(ignore_subscribe_messages=True)
                 if message is not None:
                     if message["data"].decode() == STOPWORD:
+                        logging.info('Dead: '+message["data"].decode())
                         break
                     else:
+                        logging.info('Got: '+message["data"].decode())
                         return await fetch(message["data"].decode())
                 await asyncio.sleep(0.1)
         except asyncio.TimeoutError:
+            await redis.publish("Plant::Controls", STOPWORD)
             pass
 
 async def main():
-    pubsub = redis.pubsub()
     await pubsub.psubscribe("Plant::Controls")
     future = asyncio.create_task(reader(pubsub))
-    await redis.publish("Plant::Controls", STOPWORD)
     await future
 
 if __name__ == "__main__":

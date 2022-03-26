@@ -71,7 +71,7 @@ async def processdata():
 async def main():
     while (1):
         await processdata()
-        await asyncio.sleep(30)
+        await asyncio.sleep(600)
 
 if __name__ == '__main__':
     asyncio.run(main())

@@ -7,54 +7,55 @@ import re
 import pprint
 import json
 import logging
-import asyncio
-import async_timeout
-import asyncpg
-import aioredis
-import aiohttp
+import redis #aioredisu
 import random
 import io
 import base64
+import psycopg2
 
 app = Flask(__name__)
 URL = 'http://10.243.199.34:5000'
-redis = aioredis.from_url("redis://redis", db=1)
-pubsub = redis.pubsub()
+redis = redis.from_url("redis://redis", db=1)#create a connection)
 app.logger.addHandler(logging.StreamHandler(sys.stdout))
 app.logger.setLevel(logging.DEBUG)
 
-async def Pgfetch(query):
+def Pgfetch(query):
     while True:
         try:
-            async with async_timeout.timeout(1):
-                conn = await asyncpg.connect(host='postgres', database='hydrodb', user='postgres', password='eamon2hussien')
-                result = await conn.fetch(query)
-                if result is not None:
-                    await conn.close()
-                    return result
+            conn = psycopg2.connect(host='postgres', database='hydrodb', user='postgres', password='eamon2hussien')
+            cursor = conn.cursor()
+            cursor.execute(query)
+            result = cursor.fetchall()
+            if result is not None:
+                conn.close()
+                return result
         except Exception as e:
-            logging.warning('FROM POSTGRES' + e)
+            logging.warning('FROM POSTGRES' +str(e))
 
-async def pubControls (data):
-    while True:
-        try:
-            async with async_timeout.timeout(1):
-                await redis.publish("Plant::Controls", data)
-        except Exception as e:
-            logging.warning("WHILE PUBLISHING CONTROLS"+str(e))
+def pubControls (data):
+    try:
+        redis.publish("Plant::Controls", data)
+    except Exception as e:
+        logging.warning("WHILE PUBLISHING CONTROLS"+str(e))
 
 @app.route('/')
-async def base():
+def base():
     return render_template('base.html')
 
-@app.route('/Dashboard')
-async def dashboard():
-    PH_Reading = await Pgfetch('''SELECT READING_PH FROM hydro.hydrotable LIMIT 1''')
+@app.route('/database')
+def datab():
+    result = Pgfetch('''SELECT * FROM hydro.hydrotable order by ID desc LIMIT 100''')
+    return render_template("database.html", result=result)
+
+
+@app.route('/Dashboard') 
+def dashboard():
+    PH_Reading = Pgfetch('''SELECT READING_PH FROM hydro.hydrotable LIMIT 1''')
     PHREADING = re.findall("\=(.*)\>", str(PH_Reading))
     logging.warning(PH_Reading)
     logging.warning(PHREADING)
 
-    EC_Reading = await Pgfetch('''SELECT READING_PH FROM hydro.hydrotable LIMIT 1''')
+    EC_Reading = Pgfetch('''SELECT READING_PH FROM hydro.hydrotable LIMIT 1''')
     ECREADING = re.findall("\=(.*)\>", str(EC_Reading))
     logging.warning(EC_Reading)
     logging.warning(ECREADING)
@@ -70,7 +71,7 @@ async def dashboard():
 
 
 @app.route("/superplot", methods=["GET"])
-async def plotView():
+def plotView():
     timeInterval = 7;
     query = ('''SELECT TIMEZ, count(DISTINCT(READING_PH))
                       from hydro.hydrotable
@@ -78,7 +79,7 @@ async def plotView():
                       (current_timestamp - INTERVAL '7 days')
                       GROUP BY TIMEZ ORDER BY TIMEZ;''')
     try:
-        result = await Pgfetch(query)
+        result = Pgfetch(query)
     except Exception as e:
         logging.warning(e)
 
@@ -90,7 +91,7 @@ async def plotView():
 
 
 @app.route('/Plot')
-async def plot():
+def plot():
     timeInterval = 7;
     ucounts = []
     query ='''SELECT tstampz, count(DISTINCT(id))
@@ -106,51 +107,75 @@ async def plot():
     return render_template('Dashboard.html')
 
 @app.route('/Cards')
-async def cards():
+def cards():
     return render_template('cards.html')
 
-@app.route('/database')
-async def datab():
-    result = await Pgfetch('''SELECT * FROM hydro.hydrotable order by ID desc LIMIT 100''')
-    return render_template("database.html", result=result)
-
 @app.route('/ControlPanel', methods=['GET', 'POST'])
-async def index():
+def index():
     if request.method == 'POST':
-        if request.form.get('PH_READ') == 'PH_READ':
-            await pubControls('/ECPHRead')
+        if request.form.get('PH_ON') == 'PH_ON':
+            pubControls('/PHon')
 
-        elif request.form.get('EC_READ') == 'READ':
-            await pubControls('/ECRead')
+        elif request.form.get('PH_OFF') == 'PH_OFF':
+            pubControls('/PHoff')
+
+        elif request.form.get('PH_READ') == 'PH_READ':
+            pubControls('/PHread')
+
+        elif request.form.get('EC_ON') == 'EC_ON':
+            pubControls('/ECon')
+
+        elif request.form.get('EC_OFF') == 'EC_OFF':
+            pubControls('/ECoff')
+
+        elif request.form.get('EC_READ') == 'EC_READ':
+            pubControls('/ECread')
+
+        elif request.form.get('TEMP_ON') == 'TEMP_ON':
+            pubControls('/TEMPon')
+
+        elif request.form.get('TEMP_OFF') == 'TEMP_OFF':
+            pubControls('/TEMPoff')
 
         elif request.form.get('TEMP_READ') == 'TEMP_READ':
-            await pubControls('/TEMPRead')
+            pubControls('/TEMPread')
 
-        elif request.form.get('WL_READ') == 'WL_READ':
-            await pubControls('/WLRead')
-
-        elif request.form.get('ECUP_ON') == 'ECUP_ON':
-            await pubControls('/ECUPon')
-
-        elif request.form.get('ECUP_OFF') == 'ECUP_OFF':
-            await pubControls('/ECUPoff')
-
-        elif request.form.get('PHUP_ON') == 'PHUP_ON':
-            await pubControls('/PHUPon')
-
-        elif request.form.get('PHUP_OFF') == 'PHUP_OFF':
-            await pubControls('/PHUPoff')
-
-        elif request.form.get('PHDWN_ON') == 'PHDWN_ON':
-            await pubControls('/PHDWNon')
-
-        elif request.form.get('PHDWN_OFF') == 'PHDWN_OFF':
-            await pubControls('/PHDWNoff')
+        elif request.form.get('MPUMP_ON') == 'ON':
+            pubControls('/MPUMPon')
+        
+        elif request.form.get('MPUMP_OFF') == 'OFF':
+            pubControls('/MPUMPoff')
 
     elif request.method == 'GET':
         print("No Post Back Call")
+    
+    PH_Reading = Pgfetch('''SELECT READING_PH FROM hydro.hydrotable LIMIT 1''')
+    #PHREADING = re.findall("\=(.*)\>", str(PH_Reading))
+    PH_Reading = str(PH_Reading)
+    slice_PHREADING = slice(2,7)
+    PHREADING = PH_Reading[slice_PHREADING]
+    logging.warning(PH_Reading)
+    logging.warning(PHREADING)
 
-    return render_template("index.html", PHREADING=101 , ECREADING=101)
+    PH_State = Pgfetch('''SELECT STATUS_PH FROM hydro.hydrotable LIMIT 1''')
+    PH_State = str(PH_State)
+    #slice_PHSTATE = slice(3,7)
+    #PHSTATE = PH_State[slice_PHSTATE]
+    
+    result = re.search('((.*))', s)
+    PHSTATE = result.group(1)
+    print(result.group(1))
+
+    EC_Reading = Pgfetch('''SELECT READING_EC FROM hydro.hydrotable LIMIT 1''')
+    #ECREADING = re.findall("\=(.*)\>", str(EC_Reading))
+    EC_Reading = str(EC_Reading)
+    slice_ECREAD = slice(2,7)
+    ECREADING = EC_Reading[slice_ECREAD]
+    logging.warning(EC_Reading)
+    logging.warning(ECREADING)
+    
+    EC_State = Pgfetch('''SELECT STATUS_EC FROM hydro.hydrotable LIMIT 1''')
+    return render_template("index.html", PHREAD=PHREADING,PHSTATE=PHSTATE, ECREAD=ECREADING, ECSTATE= EC_State)
 
 
 if __name__ == '__main__':

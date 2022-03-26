@@ -1,6 +1,9 @@
-flask[async]
+flask
 gunicorn
-aiohttp
-aioredis
-asyncpg
-asyncio
+requests
+#aiohttp
+#aioredis
+#asyncpg
+#asyncio
+redis
+psycopg2

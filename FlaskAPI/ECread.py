@@ -23,8 +23,17 @@ while True:
     ads1115.setAddr_ADS1115(0x48)
     ads1115.setGain(ADS1115_REG_CONFIG_PGA_4_096V)
     adc0 = ads1115.readVoltage(0)
-    EC = ph.readPH(adc0['r'],temperature)
-    ECV = adc0['r']
-    print("Temperature:%.1f ^C EC:%.2f us/cm ECV:%.2f mv" %(temperature,EC,ECV))
+    adc1 = ads1115.readVoltage(1)
+    adc2 = ads1115.readVoltage(2)
+    adc3 = ads1115.readVoltage(3)
+    EC = ec.readEC(adc2['r'],temperature)
+    ECV = adc2['r']
+    PH = ph.readPH(adc1['r'],temperature)
+    PH_Read = PH
+    PHV = adc1['r']
+    TEMPV = adc0['r']
+    WLV = adc3['r']
+    print("TEMPV:%.1f ^C WLV:%.2f LvL EC:%.2f us/cm ECV:%.2f mv" %(TEMPV,WLV,EC,ECV))
+    print("PH:%.2f PHV:%.2f mv" %(PH_Read,PHV))
     time.sleep(1.0)
 

@@ -1,4 +1,5 @@
-from python:slim
+#from python:slim
+from python:3.9-slim
 RUN groupadd flaskgroup && useradd -m -g flaskgroup -s /bin/bash flask
 RUN echo "flask ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 RUN mkdir -p /home/flask/app/web
@@ -6,6 +7,8 @@ WORKDIR /home/flask/app/web
 RUN apt update && apt upgrade -y
 RUN apt install gcc -y
 RUN pip install --upgrade pip
+RUN apt-get -y install libpq-dev gcc 
+RUN pip install psycopg2 
 COPY requirements.txt /home/flask/app/web
 RUN pip install --no-cache-dir -r requirements.txt
 RUN chown -R flask:flaskgroup /home/flask

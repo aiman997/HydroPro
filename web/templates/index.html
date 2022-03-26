@@ -16,22 +16,22 @@
         </form>
       </div>
     </div>
-    <div class="card d-flex mx-auto bg-info" style="width: 8rem; height: 22rem;">
+    <div class="card d-flex mx-auto bg-info" style="width: 8rem; height: 23rem;">
       <div class="card-header" style="text-align:center">PH SENSOR</div>
       <div class="card-body">
         <img alt="Card image cap" class="card-img-top embed-responsive-item" src="static/PH.png" />
         <br>
-        <br>
+	<br>
         <form align="center" method="post">
           <input type="submit" name="PH_ON" value="PH_ON" class="btn btn-light btn-md"/>
           <input type="submit" name="PH_OFF" value="PH_OFF" class="btn btn-light btn-md"/>
-          <input type="submit" name="PH_READ" value="READ" class="btn btn-success btn-md"/>
+          <input type="submit" name="PH_READ" value="PH_READ" class="btn btn-success btn-md"/>
           <br>
-          <br>
+	  <br>
           <table border = 3 style="text-align:center">
             <tr>
-              <th style="width:250px">{{ECREADING}}</th>
-              <th style="width:250px">{{PHREADING}}</th>
+              <th style="width:250px">{{PHREAD}}</th>
+              <th style="width:250px">{{PHSTATE}}</th>
             </tr>
           </table>
         </form>
@@ -39,21 +39,22 @@
     </div>
 
 
-    <div class="card bg-info" style="width: 8rem; height: 22rem;">
+    <div class="card bg-info" style="width: 8rem; height: 23rem;">
       <div class="card-header" style="text-align:center">EC SENSOR</div>
       <div class="card-body">
         <img alt="Card image cap" class="card-img-top embed-responsive-item" src="static/Conductivity.png" />
         <br>
         <br>
         <form align="center" method="post" >
-          <input type="submit" name="EC_ON" value="ON" class="btn btn-light btn-md"/>
-          <input type="submit" name="EC_OFF" value="OFF" class="btn btn-light btn-md"/>
-          <input type="submit" name="EC_READ" value="READ" class="btn btn-success btn-md"/>
+          <input type="submit" name="EC_ON" value="EC_ON" class="btn btn-light btn-md"/>
+          <input type="submit" name="EC_OFF" value="EC_OFF" class="btn btn-light btn-md"/>
+          <input type="submit" name="EC_READ" value="EC_READ" class="btn btn-success btn-md"/>
           <br>
           <br>
           <table border = 3 style="text-align:center">
               <tr>
-                 <th style="width:250px">{{ECREADING}}</th>
+                 <th style="width:250px">{{ECREAD}}</th>
+		 <th style="width:250px">{{ECSTATE}}</th>
               </tr>
            </table>
          </form>
@@ -67,9 +68,9 @@
         <br>
         <br>
         <form align="center" method="post" >
-          <input type="submit" name="TEMP_ON" value="ON" class="btn btn-light btn-md"/>
-          <input type="submit" name="TEMP_OFF" value="OFF" class="btn btn-light btn-md"/>
-          <input type="submit" name="TEMP_READ" value="READ" class="btn btn-success btn-md"/>
+          <input type="submit" name="TEMP_ON" value="TEMP_ON" class="btn btn-light btn-md"/>
+          <input type="submit" name="TEMP_OFF" value="TEMP_OFF" class="btn btn-light btn-md"/>
+          <input type="submit" name="TEMP_READ" value="TEMP_READ" class="btn btn-success btn-md"/>
           <br>
           <br>
           <table border = 3 style="text-align:center">
@@ -90,8 +91,8 @@
         <br>
         <br>
         <form align="center" method="post" >
-          <input type="submit" name="PUMP_ON" value="ON" class="btn btn-light btn-md"/>
-          <input type="submit" name="PUMP_OFF" value="OFF" class="btn btn-light btn-md"/>
+          <input type="submit" name="MPUMP_ON" value="ON" class="btn btn-light btn-md"/>
+          <input type="submit" name="MPUMP_OFF" value="OFF" class="btn btn-light btn-md"/>
         </form>
       </div>
     </div>
@@ -129,8 +130,8 @@
         <br>
         <br>
         <form align="center" method="post" >
-          <input type="submit" name="WL_OFF" value="OFF" class="btn btn-light btn-md">
           <input type="submit" name="WL_ON" value="ON" class="btn btn-light btn-md">
+          <input type="submit" name="WL_OFF" value="OFF" class="btn btn-light btn-md">
           <input type="submit" name="WL_READ" value="READ" class="btn btn-success btn-md">
           <br>
           <br>
