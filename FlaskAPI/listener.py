@@ -121,7 +121,8 @@ def PHread():
             TEMPV = adc0['r']
             temperature = TEMPV
             #Convert voltage to PH with temperature compensation
-            PH_Reading = ph.readPH(adc1['r'],temperature)
+            PHread = ph.readPH(adc1['r'],temperature)
+            PH_Reading = round(PHread , 3)
             PHV = adc1['r']
             print ("temperature:%.1f ^C PHmV:%.2f mv PH:%.2f" %(temperature,PHV,PH_Reading))
             print(TEMPV)
@@ -193,6 +194,7 @@ def ECread():
         print(TEMPV)
         data = {"EC_Reading": EC_Reading, "EC_State": EC_State, "TEMP_Reading":TEMP_Reading, "TEMP_State": TEMP_State}
         response = app.response_class(response=json.dumps(data), status=200, mimetype='application/json')
+        print(data)
         print(response)
         return response
 
@@ -379,14 +381,14 @@ def PHUPoff():
 @app.route('/PHUPtest', methods=['GET'])
 def PHUPtest():
     try:
-        GPIO.output(pinmap['PHUP'], GPIO.LOW)
+        GPIO.output(pinmap['PHUP'], GPIO.HIGH)
         global PHUP_State
         PHUP_State = True
         data = {"PHUP_State": PHUP_State}
         response = app.response_class(response=json.dumps(data), status=200, mimetype='application/json')
         print(response)
         time.sleep(25)
-        GPIO.output(pinmap['PHUP'], GPIO.HIGH)
+        GPIO.output(pinmap['PHUP'], GPIO.LOW)
         return response
 
     except Exception as e:
@@ -495,6 +497,7 @@ def Tick():
         #PH_Reading = float( AnalogIn(ads, ADS.P0).voltage)
         data = {"PH_State":PH_State,"PH_Reading":PH_Reading,"EC_State":EC_State,"EC_Reading":EC_Reading,"TEMP_State":TEMP_State,"TEMP_Reading":TEMP_Reading,"WL_State":WL_State,"WL_Reading":WL_Reading,"MPUMP_State":MPUMP_State,"ECUP_State":ECUP_State,"PHUP_State":PHUP_State,"PHDWN_State":PHDWN_State}
         response = app.response_class(response=json.dumps(data), status=200, mimetype='application/json')
+        print(data)
         print(response)
         return response
 

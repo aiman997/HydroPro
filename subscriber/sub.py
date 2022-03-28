@@ -15,6 +15,8 @@ pubsub = redis.pubsub()
 logging.basicConfig(level=logging.INFO)
 STOPWORD = "STOP"
 
+#async def record():
+    
 async def fetch(route):
     async with aiohttp.ClientSession() as session:
         try:

@@ -38,6 +38,15 @@ def pubControls (data):
     except Exception as e:
         logging.warning("WHILE PUBLISHING CONTROLS"+str(e))
 
+#def record (value_recieved):
+#    try:
+#        logging.info(value_recieved)
+#        values = "now()"
+#        for x in ("PH_State", "PH_Reading", "EC_State", "EC_Reading", "TEMP_State", "TEMP_Reading", "WL_State", "WL_Reading", "MPUMP_State", "ECUP_State", "PHUP_State", "PHDWN_State");
+#            values += "," + str(value_recieved[x])
+#        query = f'INSERT INTO hydro.hydrotable (TIMEZ, STATUS_PH, READING_PH, STATUS_EC, READING_EC, STATUS_TEMP, READING_TEMP, STATUS_WLEVEL, READING_WLEVEL, STATUS_MPUMP, STATUS_ECUP, STATUS_PHUP, STATUS_PHDWN, )
+        
+
 @app.route('/')
 def base():
     return render_template('base.html')
@@ -56,7 +65,7 @@ def dashboard():
     logging.warning(PHREADING)
 
     EC_Reading = Pgfetch('''SELECT READING_PH FROM hydro.hydrotable LIMIT 1''')
-    ECREADING = re.findall("\=(.*)\>", str(EC_Reading))
+    #ECREADING = re.findall("\=(.*)\>", str(EC_Reading))
     logging.warning(EC_Reading)
     logging.warning(ECREADING)
 
@@ -112,6 +121,32 @@ def cards():
 
 @app.route('/ControlPanel', methods=['GET', 'POST'])
 def index():
+    PH_Reading = Pgfetch('''SELECT READING_PH FROM hydro.hydrotable ORDER BY ID DESC LIMIT 1''')
+    #PHREADING = re.findall("\=(.*)\>", str(PH_Reading))
+    PH_Reading = str(PH_Reading)
+    slice_PHREADING = slice(2,7)
+    PHREADING = PH_Reading[slice_PHREADING]
+    logging.warning(PH_Reading)
+    logging.warning(PHREADING)
+
+    PH_State = Pgfetch('''SELECT STATUS_PH FROM hydro.hydrotable ORDER BY ID DESC LIMIT 1''')
+    PH_State = str(PH_State)
+    slice_PHSTATE = slice(3,7)
+    PHSTATE = PH_State[slice_PHSTATE]
+    
+    #result = re.search('((.*))', s)
+    #PHSTATE = result.group(1)
+    #print(result.group(1))
+
+    EC_Reading = Pgfetch('''SELECT READING_EC FROM hydro.hydrotable ORDER BY ID DESC LIMIT 1''')
+    ECREADING = re.findall("\=(.*)\>", str(EC_Reading))
+    EC_Reading = str(EC_Reading)
+    slice_ECREAD = slice(2,7)
+    ECREADING = EC_Reading[slice_ECREAD]
+    logging.warning(EC_Reading)
+    logging.warning(ECREADING)
+    
+    EC_State = Pgfetch('''SELECT STATUS_EC FROM hydro.hydrotable ORDER BY ID DESC LIMIT 1''')
     if request.method == 'POST':
         if request.form.get('PH_ON') == 'PH_ON':
             pubControls('/PHon')
@@ -149,33 +184,8 @@ def index():
     elif request.method == 'GET':
         print("No Post Back Call")
     
-    PH_Reading = Pgfetch('''SELECT READING_PH FROM hydro.hydrotable LIMIT 1''')
-    #PHREADING = re.findall("\=(.*)\>", str(PH_Reading))
-    PH_Reading = str(PH_Reading)
-    slice_PHREADING = slice(2,7)
-    PHREADING = PH_Reading[slice_PHREADING]
-    logging.warning(PH_Reading)
-    logging.warning(PHREADING)
-
-    PH_State = Pgfetch('''SELECT STATUS_PH FROM hydro.hydrotable LIMIT 1''')
-    PH_State = str(PH_State)
-    #slice_PHSTATE = slice(3,7)
-    #PHSTATE = PH_State[slice_PHSTATE]
     
-    result = re.search('((.*))', s)
-    PHSTATE = result.group(1)
-    print(result.group(1))
-
-    EC_Reading = Pgfetch('''SELECT READING_EC FROM hydro.hydrotable LIMIT 1''')
-    #ECREADING = re.findall("\=(.*)\>", str(EC_Reading))
-    EC_Reading = str(EC_Reading)
-    slice_ECREAD = slice(2,7)
-    ECREADING = EC_Reading[slice_ECREAD]
-    logging.warning(EC_Reading)
-    logging.warning(ECREADING)
-    
-    EC_State = Pgfetch('''SELECT STATUS_EC FROM hydro.hydrotable LIMIT 1''')
-    return render_template("index.html", PHREAD=PHREADING,PHSTATE=PHSTATE, ECREAD=ECREADING, ECSTATE= EC_State)
+    return render_template("index.html", PHREAD=PHREADING, PHSTATE=PHSTATE, ECREAD=ECREADING, ECSTATE=EC_State)
 
 
 if __name__ == '__main__':

@@ -56,9 +56,9 @@ async def appendkeys(res_dct):
 
 async def processdata():
     try:
-        res_str = await fetch('/Tick')
+        res_str = await fetch('/Tick')#save returned data to res_str
         if res_str is not None:
-            res_dct = json.loads(res_str)
+            res_dct = json.loads(res_str)#converts the json string to a python dictonary 
             await appendkeys(res_dct)
             await redis.set('Plant::Data', json.dumps(res_dct))
             logging.info('PUBLISHED Plant::Data \t' + time.strftime("%I:%M:%S %p ", time.localtime()) + json.dumps(res_dct, indent=4))
@@ -71,7 +71,7 @@ async def processdata():
 async def main():
     while (1):
         await processdata()
-        await asyncio.sleep(600)
+        await asyncio.sleep(1000)
 
 if __name__ == '__main__':
     asyncio.run(main())
