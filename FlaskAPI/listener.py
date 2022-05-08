@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 import sys
-sys.path.append('../')#*
+#sys.path.append('../')#*
 import time
 from flask import Flask
 from flask import json, request, render_template, redirect, url_for
-from adafruit_ads1x15.analog_in import AnalogIn#*is this needed?
+#from adafruit_ads1x15.analog_in import AnalogIn
 import time
 import board
 import busio
 import RPi.GPIO as GPIO
-import adafruit_ads1x15.ads1115 as ADS#*is this needed
+#import adafruit_ads1x15.ads1115 as ADS
 from DFRobot_ADS1115 import ADS1115
 from DFRobot_EC      import DFRobot_EC
 from DFRobot_PH      import DFRobot_PH
@@ -44,16 +44,23 @@ PHDWN_State  = False
 app = Flask(__name__)
 GPIO.setmode(GPIO.BCM)
 i2c = busio.I2C(board.SCL, board.SDA)
-ads = ADS.ADS1115(i2c)
 
-#CH1 26 PH
-#CH2 19 WL
-#CH3 13 EC
-#CH4 6  TEMP
-#CH5 12 PHUP
-#CH6 20 PHDWN
-#CH7 16 ECUP
-#CH8 21 MPUMP
+#ads = ADS.ADS1115(i2c)
+# GPIO LAYOUT
+# CHANNEL | | GPIO_NO | |  COMP  |
+#---------|-|---------|-|--------|
+#   01    | |   26    | |  PH    |
+#   02    | |   19    | |  WL    |
+#   03    | |   13    | |  EC    |
+#   04    | |   06    | |  TEMP  |
+#   05    | |   12    | |  PHUP  |
+#   06    | |   20    | |  PHDWN |
+#   07    | |   16    | |  ECUP  |
+#   08    | |   21    | |  MPUMP |
+#   09    | |   --    | |  WIN   |
+#   10    | |   --    | |  WOUT  |
+#   11    | |   --    | |  WFLOW |
+#   12    | |   --
 
 act_HIGH_List = [26, 19, 13 ,6, 21]
 act_LOW_List = [12, 16, 20]
@@ -69,31 +76,43 @@ for i in act_LOW_List:
     GPIO.setup(i, GPIO.OUT)
     GPIO.output(i, GPIO.HIGH)
 
+
+#def decorator(func):
+#    def inner(*args, **kwargs):
+#        returned_value = func(*args, **kwargs)
+#        return returned_value
+#    return inner
+
+
+#@decorator
+def processer(relay, rstate, key, state):
+
+    GPIO.output(pinmap[relay], rstate)
+    data = {key: state}
+    response = app.response_class(response=json.dumps(data), status=200, mimetype='application/json')
+    return response
+
 @app.route('/PHon', methods=['GET'])
-def PHon(): #PH(bool PHstate) 1 or 0
+def PHon(): 
+    global PH_State 
+    relay, rstate, key, state = 'PH', GPIO.HIGH, 'PH_State', True
     try:
-        GPIO.output(pinmap['PH'], GPIO.HIGH)
-        global PH_State
-        PH_State = True
-        data = {"PH_State": PH_State}
-        response = app.response_class(response=json.dumps(data), status=200, mimetype='application/json')
-        print(response)
-        return response
+        result = processer(relay, rstate, key, state)
+        PH_State = state
+        return result
 
     except Exception as e:
-        str = f'Error: {str(e)}'
-        return str
+        a = f'Error: {str(e)}'
+        return a
 
 @app.route('/PHoff', methods=['GET'])
 def PHoff():
+    global PH_State 
+    relay, rstate, key, state = 'PH', GPIO.LOW, 'PH_State', False
     try:
-        GPIO.output(pinmap['PH'], GPIO.LOW)
-        global PH_State
-        PH_State = False
-        data = {"PH_State": PH_State}
-        response = app.response_class(response=json.dumps(data), status=200, mimetype='application/json')
-        print(response)
-        return response
+        result = processer(relay, rstate, key, state)
+        PH_State = state
+        return result
 
     except Exception as e:
         str = f'Error: {str(e)}'
@@ -137,14 +156,14 @@ def PHread():
 
 @app.route('/ECon', methods=['GET'])
 def ECon():
-    global EC_State
+    
+    global PH_State 
+    relay, rstate, key, state = 'EC', GPIO.HIGH, 'PH_State', True
     try:
-        GPIO.output(pinmap['EC'], GPIO.HIGH)
-        EC_State = True
-        data = {"EC_State": EC_State}
-        response = app.response_class(response=json.dumps(data), status=200, mimetype='application/json')
-        print(response)
-        return response
+        result = processer(relay, rstate, key, state)
+        PH_State = state
+        return result
+
     except Exception as e:
         str = f'Error: {str(e)}'
     return str
@@ -204,15 +223,17 @@ def ECread():
 
 @app.route('/TEMPon', methods=['GET'])
 def TEMPon():
+    GPIO.output(pinmap['EC'], GPIO.LOW)
+    global EC_State
     try:
-        GPIO.output(pinmap['TEMP'], GPIO.HIGH)
-        global TEMP_State
-        TEMP_State = True
-        data = {"TEMP_State": TEMP_State}
+        GPIO.output(pinmap['EC'], GPIO.LOW)
+        global EC_State
+        EC_State = False
+        data = {"EC_State": EC_State}
         response = app.response_class(response=json.dumps(data), status=200, mimetype='application/json')
         print(response)
         return response
-
+    
     except Exception as e:
         str = f'Error: {str(e)}'
     return str
