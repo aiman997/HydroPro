@@ -1,7 +1,7 @@
 import unittest
 import sys
 
-sys.path.insert(0, '/Users/mahrous/Projects/HydroPro/FlaskAPI/src/Components/base')
+sys.path.insert(0, '/home/eampi/Projects/HydroPro/FlaskAPI/src/Components/base')
 from Sensor import Sensor
 
 class TestSensorMethods(unittest.TestCase):
