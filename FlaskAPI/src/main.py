@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 import sys
-#sys.path.append('../')#*
+#sys.path.append('./')#*
 import time
 from flask import Flask
 from flask import json, request, render_template, redirect, url_for
 #from adafruit_ads1x15.analog_in import AnalogIn
-import time
 import board
 import busio
 import RPi.GPIO as GPIO
@@ -13,6 +12,8 @@ import RPi.GPIO as GPIO
 from DFRobot_ADS1115 import ADS1115
 from DFRobot_EC      import DFRobot_EC
 from DFRobot_PH      import DFRobot_PH
+from Components.EC   import EC
+from Components.PH   import PH
 
 ADS1115_REG_CONFIG_PGA_6_144V        = 0x00 # 6.144V range = Gain 2/3
 ADS1115_REG_CONFIG_PGA_4_096V        = 0x02 # 4.096V range = Gain 1
@@ -23,9 +24,12 @@ ADS1115_REG_CONFIG_PGA_0_256V        = 0x0A # 0.256V range = Gain 16
 
 ads1115 = ADS1115()
 ec      = DFRobot_EC()
+ecn     = EC()
 ph      = DFRobot_PH()
-ec.begin()
-ph.begin()
+phn     = PH()
+
+#ec.begin()
+#ph.begin()
 
 PH_State     = False
 PH_Reading   = 0.0
@@ -49,42 +53,48 @@ i2c = busio.I2C(board.SCL, board.SDA)
 # GPIO LAYOUT
 # CHANNEL | | GPIO_NO | |  COMP  |
 #---------|-|---------|-|--------|
-#   01    | |   26    | |  PH    |
-#   02    | |   19    | |  WL    |
-#   03    | |   13    | |  EC    |
-#   04    | |   06    | |  TEMP  |
+#   01    | |   08    | |  EC    |
+#   02    | |   06    | |  WL    |
+#   03    | |   11    | |  EC    |
+#   04    | |   07    | |  TEMP  |
 #   05    | |   12    | |  PHUP  |
 #   06    | |   20    | |  PHDWN |
 #   07    | |   16    | |  ECUP  |
 #   08    | |   21    | |  MPUMP |
-#   09    | |   --    | |  WIN   |
-#   10    | |   --    | |  WOUT  |
-#   11    | |   --    | |  WFLOW |
-#   12    | |   --
+#   09    | |   26    | |  WIN   |
+#   10    | |   19    | |  WOUT  |
+#   11    | |   05    | |  WFLOW |
+#   12    | |   13
 
-act_HIGH_List = [26, 19, 13 ,6, 21]
-act_LOW_List = [12, 16, 20]
-pinmap = {"PH": 26, "EC": 13, "TEMP":6, "WL":19, "ECUP":20, "PHUP":12, "PHDWN":16, "MPUMP":21} 
+act_HIGH_List = [20, 26, 11, 19, 13 ,6, 21,5,7]
+act_LOW_List = [12, 16, 8]
+pinmap = {"PH": 7, "EC": 8, "TEMP":11, "WL":19, "ECUP":20, "PHUP":12, "PHDWN":16, "MPUMP":21} 
 sleepTimeShort = 0.2
 sleepTimeLong = 0.1
 
 for i in act_HIGH_List:
     GPIO.setup(i, GPIO.OUT)
-    GPIO.output(i, GPIO.LOW)
+    GPIO.output(i, GPIO.HIGH)
 
 for i in act_LOW_List:
     GPIO.setup(i, GPIO.OUT)
     GPIO.output(i, GPIO.HIGH)
 
 
-#def decorator(func):
-#    def inner(*args, **kwargs):
-#        returned_value = func(*args, **kwargs)
-#        return returned_value
-#    return inner
+@app.route('/pins/<string:pin>/<string:state>',methods=['GET'] )
+def pins(pin: str, state: str):
+    #pin = 'PH'
+    #state = 'LOW'
+    if state == 'HIGH':
+        GPIO.output(pinmap[pin],GPIO.HIGH)
+        print(pin)
+        print(state)
+        return pin + state
 
-
-#@decorator
+    else: 
+        GPIO.output(pinmap[pin],GPIO.LOW)
+        return pin + state
+    
 def processer(relay, rstate, key, state):
 
     GPIO.output(pinmap[relay], rstate)
@@ -92,10 +102,40 @@ def processer(relay, rstate, key, state):
     response = app.response_class(response=json.dumps(data), status=200, mimetype='application/json')
     return response
 
+@app.route('/tester', methods=['GET'])
+def tester():
+    temperature = 25.0
+    GPIO.output(pinmap['PH'], GPIO.HIGH)
+    GPIO.output(pinmap['TEMP'], GPIO.HIGH)
+    TEMP_State = True
+    PH_State = True
+    #Set the IIC address
+    ads1115.setAddr_ADS1115(0x48)
+    #Sets the gain and input voltage range.
+    ads1115.setGain(ADS1115_REG_CONFIG_PGA_4_096V)
+    #Get the Digital Value of Analog of selected channel
+    adc0 = ads1115.readVoltage(0)
+    adc1 = ads1115.readVoltage(1)
+    tempv = adc0['r']
+    temperature = tempv
+    pH_level = phn.readPH(adc1['r'], temperature) 
+    #Convert voltage to PH with temperature compensation
+    #PH_Reading = round(pH_level, 3)
+    PH_Reading = pH_level
+    #print ("temperature:%.1f ^C PHmV:%.2f mv PH:%.2f" %(temperature,PHV,PH_Reading))
+    print(tempv)
+    data = {"PH_Reading": PH_Reading,"PH_State": PH_State, "temperature": TEMP_Reading, "TEMP_State": TEMP_State}
+    response = app.response_class(response=json.dumps(data), status=200, mimetype='application/json')
+    print(response)
+    return response
+
+
+
+
 @app.route('/PHon', methods=['GET'])
 def PHon(): 
     global PH_State 
-    relay, rstate, key, state = 'PH', GPIO.HIGH, 'PH_State', True
+    relay, rstate, key, state = 'PH', GPIO.LOW, 'PH_State', True
     try:
         result = processer(relay, rstate, key, state)
         PH_State = state
@@ -108,7 +148,7 @@ def PHon():
 @app.route('/PHoff', methods=['GET'])
 def PHoff():
     global PH_State 
-    relay, rstate, key, state = 'PH', GPIO.LOW, 'PH_State', False
+    relay, rstate, key, state = 'PH', GPIO.HIGH, 'PH_State', False
     try:
         result = processer(relay, rstate, key, state)
         PH_State = state
@@ -126,8 +166,8 @@ def PHread():
         global TEMP_State
 
         try:
-            GPIO.output(pinmap['PH'], GPIO.HIGH)
-            GPIO.output(pinmap['TEMP'], GPIO.HIGH)
+            GPIO.output(pinmap['PH'], GPIO.LOW)
+            GPIO.output(pinmap['TEMP'], GPIO.LOW)
             TEMP_State = True
             PH_State = True
             #Set the IIC address
@@ -135,12 +175,17 @@ def PHread():
             #Sets the gain and input voltage range.
             ads1115.setGain(ADS1115_REG_CONFIG_PGA_4_096V)
             #Get the Digital Value of Analog of selected channel
-            adc0 = ads1115.readVoltage(0)
             adc1 = ads1115.readVoltage(1)
-            TEMPV = adc0['r']
-            temperature = TEMPV
+            adc2 = ads1115.readVoltage(2)
+            TEMPV = adc2['r']
+            #temperature = TEMPV
+            print("right before temp")
+            temperature = 25.0
+            print(temperature)
             #Convert voltage to PH with temperature compensation
             PHread = ph.readPH(adc1['r'],temperature)
+            print("PHread") 
+            print(PHread)
             PH_Reading = round(PHread , 3)
             PHV = adc1['r']
             print ("temperature:%.1f ^C PHmV:%.2f mv PH:%.2f" %(temperature,PHV,PH_Reading))
@@ -151,17 +196,17 @@ def PHread():
             return response
 
         except Exception as e:
-            str = f'Error: {str(e)}'
-        return str
+            x = f'Error: {str(e)}'
+        return x
 
 @app.route('/ECon', methods=['GET'])
 def ECon():
     
-    global PH_State 
-    relay, rstate, key, state = 'EC', GPIO.HIGH, 'PH_State', True
+    global EC_State 
+    relay, rstate, key, state = 'EC', GPIO.LOW, 'PH_State', True
     try:
         result = processer(relay, rstate, key, state)
-        PH_State = state
+        EC_State = state
         return result
 
     except Exception as e:
@@ -170,10 +215,10 @@ def ECon():
 
 @app.route('/ECoff', methods=['GET'])
 def ECoff():
-    GPIO.output(pinmap['EC'], GPIO.LOW)
+    #GPIO.output(pinmap['EC'], GPIO.HIGH)
     global EC_State
     try:
-        GPIO.output(pinmap['EC'], GPIO.LOW)
+        GPIO.output(pinmap['EC'], GPIO.HIGH)
         global EC_State
         EC_State = False
         data = {"EC_State": EC_State}
@@ -223,10 +268,10 @@ def ECread():
 
 @app.route('/TEMPon', methods=['GET'])
 def TEMPon():
-    GPIO.output(pinmap['EC'], GPIO.LOW)
+    GPIO.output(pinmap['TEMP'], GPIO.LOW)
     global EC_State
     try:
-        GPIO.output(pinmap['EC'], GPIO.LOW)
+        GPIO.output(pinmap['TEMP'], GPIO.LOW)
         global EC_State
         EC_State = False
         data = {"EC_State": EC_State}
@@ -241,7 +286,7 @@ def TEMPon():
 @app.route('/TEMPoff', methods=['GET'])
 def TEMPoff():
     try:
-        GPIO.output(pinmap['TEMP'], GPIO.LOW)
+        GPIO.output(pinmap['TEMP'], GPIO.HIGH)
         global TEMP_State
         TEMP_State = False
         data = {"TEMP_State": TEMP_State}
@@ -258,7 +303,7 @@ def TEMPRead():
     global TEMP_Reading
     global TEMP_State
     try:
-        GPIO.output(pinmap['TEMP'], GPIO.HIGH)
+        GPIO.output(pinmap['TEMP'], GPIO.LOW)
         TEMP_State = True
         #Set the IIC address
         ads1115.setAddr_ADS1115(0x48)

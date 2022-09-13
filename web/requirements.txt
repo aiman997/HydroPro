@@ -1,9 +1,5 @@
 flask
 gunicorn
 requests
-#aiohttp
-#aioredis
-#asyncpg
-#asyncio
 redis
 psycopg2

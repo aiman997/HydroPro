@@ -38,6 +38,17 @@ def pubControls (data):
     except Exception as e:
         logging.warning("WHILE PUBLISHING CONTROLS"+str(e))
 
+def pubRControls (data):
+    try:
+        redis.publish("Plant::RControls", data)
+    except Exception as e:
+        logging.warning("WHILE PUBLISHING RCONTROLS" + str(e))
+
+def pubAutoControl (data):
+    try:
+        redis.publish("Plant::Auto", data)
+    except Exception as e:
+        logging.warning("WHILE PUBLISHSING AUTO" + str(e))
 
 @app.route('/')
 def base():
@@ -92,6 +103,8 @@ def index():
 
         elif request.form.get('PH_READ') == 'PH_READ':
             pubControls('/PHread')
+            time.sleep(5)
+            pubRControls('/PHread')
 
         elif request.form.get('EC_ON') == 'EC_ON':
             pubControls('/ECon')
@@ -101,6 +114,7 @@ def index():
 
         elif request.form.get('EC_READ') == 'EC_READ':
             pubControls('/ECread')
+            pubRControls('/ECread')
 
         elif request.form.get('TEMP_ON') == 'TEMP_ON':
             pubControls('/TEMPon')
@@ -110,6 +124,7 @@ def index():
 
         elif request.form.get('TEMP_READ') == 'TEMP_READ':
             pubControls('/TEMPread')
+            pubRControls('/TEMPRead')
 
         elif request.form.get('MPUMP_ON') == 'ON':
             pubControls('/MPUMPon')
@@ -117,6 +132,9 @@ def index():
         elif request.form.get('MPUMP_OFF') == 'OFF':
             pubControls('/MPUMPoff')
 
+        elif request.form.get('AUTO') == 'AUTO':
+            pubAutoControl('/Auto')
+            
     elif request.method == 'GET':
         print("No Post Back Call")
     

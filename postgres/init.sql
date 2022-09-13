@@ -16,6 +16,7 @@ SET timezone = +8;
 -- AT TIME ZONE '-03:30',
 CREATE SCHEMA IF NOT EXISTS project;
 CREATE SCHEMA IF NOT EXISTS hydro;
+
 CREATE TABLE project.visitors(
     site_id integer,
     site_name text,
@@ -35,9 +36,39 @@ CREATE TABLE hydro.hydrotable(
         STATUS_PHUP TEXT NOT NULL,
         STATUS_PHDOWN TEXT NOT NULL,
         READING_WLEVEL FLOAT NOT NULL,
-        STATUS_WLEVEL TEXT NOT NULL
+        STATUS_WLEVEL TEXT NOT NULL,
+	STAGEID INT REFERENCES hydro.stages (ID),
+	PLANTID INT REFERENCES hydro.plants (ID)
 );
 
+CREATE TABLE hydro.users(
+	ID BIGSERIAL PRIMARY KEY,
+	PLANTID INT REFERENCE hydro.plants (ID),
+	USERNAME TEXT NOT NULL,
+	PASSWORD TEXT NOT NULL,
+);
+
+CREATE TABLE hydro.plants(
+	ID BIGSERIAL PRIMARY KEY,
+	USERID INT REFERENCES hydro.users (ID),
+	PLANT_NAME TEXT NOT NULL,
+	INTRVL_WATER INT NOT NULL,
+	STAGEID INT REFERENCES hydro.stages (ID),
+);
+
+CREATE TABLE hydro.stages(
+	ID BIGSERIAL PRIMARY KEY,
+	PLANTID INT REFERENCES hydro.plants (ID),
+	PERIOD INT NOT NULL,
+	INTRVL_WATER INT NOT NULL,
+	RANGE_EC  INT NOT NULL,
+	RANGE_PH INT NOT NULL,
+);
+
+}
 ALTER TABLE project.visitors OWNER TO postgres;
 ALTER TABLE hydro.hydrotable OWNER TO postgres;
+ALTER TABLE hydro.plants OWNER TO postgres;
+ALTER TABLE hydro.users OWNER TO postgres;
+ALTER TABLE hydro.stages OWNER TO postgres;
 -- ALTER TABLE hydro.hydrotable ALTER COLUMN value NUMERIC(22,6)

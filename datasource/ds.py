@@ -13,6 +13,8 @@ import async_timeout
 URL = 'http://10.243.199.34:5000'
 redis = aioredis.from_url("redis://redis", db=1)
 logging.basicConfig(level=logging.DEBUG)
+pubsub = redis.pubsub()
+STOPWORD = "STOP"
 
 async def Pgfetch(query):
     while True:
@@ -56,10 +58,12 @@ async def appendkeys(res_dct):
 
 async def processdata():
     try:
-        res_str = await fetch('/Tick')#save returned data to res_str
+        res_str = await fetch('/Tick')
+        logging.info("This is fetch res" + res_str)
         if res_str is not None:
             res_dct = json.loads(res_str)#converts the json string to a python dictonary 
             await appendkeys(res_dct)
+            logging.info("passed appendkeys")
             await redis.set('Plant::Data', json.dumps(res_dct))
             logging.info('PUBLISHED Plant::Data \t' + time.strftime("%I:%M:%S %p ", time.localtime()) + json.dumps(res_dct, indent=4))
             await record(res_dct)
@@ -68,10 +72,32 @@ async def processdata():
     except Exception as e:
         logging.warning('ERROR WHILE PROCESSING DATA: '+str(e))
 
+
+async def reader(channel: aioredis.client.PubSub):
+    while True:
+        try:
+            async with async_timeout.timeout(1):
+                message = await channel.get_message(ignore_subscribe_messages=True)
+                if message is not None:
+                    if message["data"].decode() == STOPWORD:
+                        logging.info('ds GOT:'+message["data"].decode())
+                        break
+                    else:
+                        logging.info('ds GOT:'+message["data"].decode())
+                        return await processdata()
+                        #logging.info("Passed Processdata")
+                await asyncio.sleep(0.1)
+        except asyncio.TimeoutError:
+            await redis.publish("Plant::RControls", STOPWORD)
+            pass
+
 async def main():
     while (1):
-        await processdata()
-        await asyncio.sleep(1000)
+        await pubsub.psubscribe("Plant::RControls")
+        future = asyncio.create_task(reader(pubsub))
+        #await processdata()
+        #await asyncio.sleep(1000)
+        await future
 
 if __name__ == '__main__':
     asyncio.run(main())

@@ -26,14 +26,15 @@ while True:
     adc1 = ads1115.readVoltage(1)
     adc2 = ads1115.readVoltage(2)
     adc3 = ads1115.readVoltage(3)
-    EC = ec.readEC(adc2['r'],temperature)
-    ECV = adc2['r']
-    PH = ph.readPH(adc1['r'],temperature)
+    EC = ec.readEC(adc1['r'],temperature)
+    ECV = adc1['r']
+    PH = ph.readPH(adc0['r'],temperature)
     PH_Read = PH
-    PHV = adc1['r']
-    TEMPV = adc0['r']
+    PHV = adc0['r']
+    TEMPV = adc2['r']
     WLV = adc3['r']
-    print("TEMPV:%.1f ^C WLV:%.2f LvL EC:%.2f us/cm ECV:%.2f mv" %(TEMPV,WLV,EC,ECV))
-    print("PH:%.2f PHV:%.2f mv" %(PH_Read,PHV))
+    print("TEMPV:%.1f ^C WLV:%.2f LvL" %(TEMPV,WLV))
+    print("EC:%.2f us/cm , ECV:%.2f mv"%(EC, ECV))
+    print("PH:%.2f , PHV:%.2f mv" %(PH_Read,PHV))
     time.sleep(1.0)
 

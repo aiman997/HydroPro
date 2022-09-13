@@ -9,6 +9,7 @@ class TestSensorMethods(unittest.TestCase):
     def test_init(self):
         sen = Sensor('test', 10, 'up', 12, '12121Fd', 2)
         self.assertEqual(sen.name, 'test')
+        self.assertEqual(sen.measurment, 10)
     
     def test_setters(self):
         sen = Sensor('test', 10, 'up', 12, '12121Fd', 2)
