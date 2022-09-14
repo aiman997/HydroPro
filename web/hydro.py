@@ -68,7 +68,7 @@ def cards():
     return render_template('cards.html')
 
 @app.route('/Dash')
-def cards():
+def dash():
     return render_template('dash.html')
 
 @app.route('/ControlPanel', methods=['GET', 'POST'])

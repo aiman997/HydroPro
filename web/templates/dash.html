@@ -1,6 +1,7 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
+<!-- <html lang="en"> -- >
+
+<!-- <head> 
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -9,11 +10,14 @@
 	<!-- My CSS -->
 	<link rel="stylesheet" href="static/dash_styles.css">
 
-	<title>AdminHub</title>
+	<title>Dashboard</title>
 </head>
-<body>
+ <body> -->
 
 
+{% extends "base.html" %}
+{% block content %}
+	
 	<!-- SIDEBAR -->
 	<section id="sidebar">
 		<a href="#" class="brand">
@@ -236,6 +240,7 @@
 	<!-- CONTENT -->
 	
 
-	<script src="static/dash_script.js"></script>
-</body>
-</html>
+<script src="static/dash_script.js"></script>
+{% endblock %}
+	<!-- </body> -->
+<!-- </html> -->
