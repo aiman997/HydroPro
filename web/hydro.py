@@ -67,6 +67,10 @@ def settings():
 def cards():
     return render_template('cards.html')
 
+@app.route('/Dash')
+def cards():
+    return render_template('dash.html')
+
 @app.route('/ControlPanel', methods=['GET', 'POST'])
 def index():
     PH_Reading = Pgfetch('''SELECT READING_PH FROM hydro.hydrotable ORDER BY ID DESC LIMIT 1''')
