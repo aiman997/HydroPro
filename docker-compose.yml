@@ -1,24 +1,24 @@
 version: '3'
 
 services:
- flaskapp:
-   build: ./web
-   restart: always
-   expose:
-     - "8000"
-   volumes:
-     - ./web:/home/flask/app/web
-   depends_on:
-     - redis
-     - postgres
-   links:
-     - redis
-     - postgres
-   environment:
-     FLASK_DEBUG: 1
-   deploy:
-     mode: replicated
-     replicas: 1
+# flaskapp:
+#  build: ./web
+#  restart: always
+#  expose:
+#    - "8000"
+#  volumes:
+#    - ./web:/home/flask/app/web
+#  depends_on:
+#    - redis
+#    - postgres
+#  links:
+#    - redis
+#    - postgres
+#  environment:
+#    FLASK_DEBUG: 1
+#  deploy:
+#    mode: replicated
+#    replicas: 1
 
  redis:
    image: redis:alpine
@@ -27,25 +27,40 @@ services:
      mode: replicated
      replicas: 1
 
- ds:
-   build: ./datasource
+ flaskappn:
+   build: ./webN
    restart: always
    expose:
-     - "8001"
+    - "8006"
    volumes:
-     - ./datasource:/home/flask/app/datasource
+    - ./webN:/home/flask/app/webN
    depends_on:
-     - redis
-     - postgres
-   links:
-     - redis
-     - postgres
-
+    - redis
+    - postgres
    environment:
-     URL: 'http://192.168.101.26:80'
-     PYTHONASYNCIODEBUG: 1
-
+     FLASK_DEBUG: 1
    deploy:
+    mode: replicated
+    replicas: 1
+
+ ds:
+  build: ./datasource
+  restart: always
+  expose:
+    - "8001"
+  volumes:
+    - ./datasource:/home/flask/app/datasource
+  depends_on:
+    - redis
+    - postgres
+  links:
+    - redis
+    - postgres
+
+  environment:
+    URL: 'http://192.168.101.26:80'
+    PYTHONASYNCIODEBUG: 1
+  deploy:
      mode: replicated
      replicas: 1
 
@@ -71,7 +86,6 @@ services:
      mode: replicated
      replicas: 1
 
-
  auto:
    build: ./autocontrol
    restart: always
@@ -82,13 +96,32 @@ services:
    depends_on:
      - redis
      - postgres
+
+   environment:
+     URL: 'http://192.168.101.26:80'
+     PYTHONASYNCIODEBUG: 1
+   
+   deploy:
+     mode: replicated
+     replicas: 1
+
+ automatic:
+   build: ./automatic
+   restart: always
+   expose:
+     - "8005"
+   volumes:
+     - ./automatic:/home/flask/app/automatic
+   depends_on:
+     - redis
+     - postgres
    environment:
      URL: 'http://192.168.101.26:80'
      PYTHONASYNCIODEBUG: 1
    deploy:
      mode: replicated
      replicas: 1
-
+       
  nginx:
    build: nginx/
    restart: always
@@ -97,8 +130,8 @@ services:
    deploy:
      mode: replicated
      replicas: 1
-   depends_on:
-     - flaskapp
+#  depends_on:
+#    - flaskappn
 
  postgres:
    restart: always

@@ -257,10 +257,11 @@ def ECread():
         print ("temperature:%.1f ^C ECmV:%.2f mv EC:%.2f" %(temperature,ECV,EC_Reading))
         print(TEMPV)
         data = {"EC_Reading": EC_Reading, "EC_State": EC_State, "TEMP_Reading":TEMP_Reading, "TEMP_State": TEMP_State}
-        response = app.response_class(response=json.dumps(data), status=200, mimetype='application/json')
-        print(data)
-        print(response)
+        #response = app.response_class(response=json.dumps(data), status=200, mimetype='application/json')
         return response
+        #print(data)
+        #print(response)
+        #return response
 
     except Exception as e:
         er = f'Error: {str(e)}'

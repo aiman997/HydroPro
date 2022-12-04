@@ -1,4 +1,4 @@
-from flask import Flask, redirect, url_for, request, render_template, make_response
+from flask import Flask, redirect, url_for, request, render_template, make_response, session, flash
 from datetime import datetime
 import time
 import sys
@@ -12,8 +12,11 @@ import random
 import io
 import base64
 import psycopg2
+import psycopg2.extras
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
+app.secret_key = 'aiman'
 URL = 'http://10.243.199.34:5000'
 redis = redis.from_url("redis://redis", db=1) #create a connection
 app.logger.addHandler(logging.StreamHandler(sys.stdout))
@@ -50,9 +53,156 @@ def pubAutoControl (data):
     except Exception as e:
         logging.warning("WHILE PUBLISHSING AUTO" + str(e))
 
-@app.route('/')
+def pgAuth(query, arg):
+    try:
+        conn = psycopg2.connect(database='hydrodb', user='postgres', password='eamon2hussien', host='postgres')
+        # Check if account exists using MySQL
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        #cursor.execute('SELECT * FROM hydro.usrs WHERE username = %s', (username,))
+        cursor.execute(query, (arg,))
+        #cursor.execute(query, arg)
+        # Fetch one record and return result
+        account = cursor.fetchone()
+        return account
+    except Exception as e:
+        logging.warning("pgAuth" + str(e))
+
+def pgSession(query, arg):
+    try:
+        conn = psycopg2.connect(database='hydrodb', user='postgres', password='eamon2hussien', host='postgres')
+        # Check if account exists using MySQL
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        #cursor.execute('SELECT * FROM hydro.usrs WHERE username = %s', (username,))
+        cursor.execute(query, arg)
+        #cursor.execute(query, arg)
+        # Fetch one record and return result
+        account = cursor.fetchone()
+        return account
+    except Exception as e:
+        logging.warning("pgAuth" + str(e))
+def pgInsert(fullname, username, _hashed_password, email):
+    try:
+        conn = psycopg2.connect(database='hydrodb', user='postgres', password='eamon2hussien', host='postgres')
+        # Check if account exists using MySQL
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("INSERT INTO hydro.usrs (fullname, username, password, email) VALUES (%s,%s,%s,%s)", (fullname, username, _hashed_password, email))
+        conn.commit()
+        return True
+    except Exception as e:
+        logging.warning("pgInsert" + str(e))
+
+@app.route('/base')
 def base():
     return render_template('base.html')
+
+@app.route('/')
+def home():
+    #check if user is logged in
+    if 'loggedin' in session:
+        #show home page
+        logging.warning("logged in")
+        return render_template('home.html', username = session['username'])
+    #if not loggedin show login
+    logging.warning("not logged in")
+    return redirect(url_for('login'))
+
+@app.route('/login/', methods=['GET','POST'])
+def login():
+    # Check if "username" and "password" POST requests exist (user submitted form)
+    if request.method == 'POST' and 'username' in request.form and 'password' in request.form:
+        username = request.form['username']
+        password = request.form['password']
+        logging.warning(password)
+        query =  'SELECT * FROM hydro.usrs WHERE username = %s'
+        arg = username
+        account = pgAuth(query, arg)
+        if account:
+            password_rs = account['password']
+            logging.warning(password_rs)
+            # If account exists in users table in out database
+            if check_password_hash(password_rs, password):
+                # Create session data, we can access this data in other routes
+                session['loggedin'] = True
+                session['id'] = account['id']
+                session['username'] = account['username']
+                # Redirect to home page
+                return redirect(url_for('home'))
+            else:
+                # Account doesnt exist or username/password incorrect       
+                flash('Incorrect username/password')
+        else:
+            # Account doesnt exist or username/password incorrect       
+            flash('Incorrect username/password')
+    
+    return render_template('login.html')
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+        #cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        # Check if "username", "password" and "email" POST requests exist (user submitted form)
+        if request.method == 'POST' and 'username' in request.form and 'password' in request.form and 'email' in request.form:
+            # Create variables for easy access
+            fullname = request.form['fullname']
+            username = request.form['username']
+            password = request.form['password']
+            email = request.form['email']
+            _hashed_password = generate_password_hash(password)
+            arg = username
+            account = pgAuth(query, arg)
+
+            #Check if account exists using MySQL
+            #cursor.execute('SELECT * FROM users WHERE username = %s', (username,))
+            #account = cursor.fetchone()
+            #print(account)
+            # If account exists show error and validation checks
+            if account:
+                flash('Account already exists!')
+            elif not re.match(r'[^@]+@[^@]+\.[^@]+', email):
+                flash('Invalid email address!')
+            elif not re.match(r'[A-Za-z0-9]+', username):
+                flash('Username must contain only characters and numbers!')
+            elif not username or not password or not email:
+                flash('Please fill out the form!')
+            else:
+
+                # Account doesnt exists and the form data is valid, now insert new account into users table
+                if pgInsert(fullname, username, _hashed_password, email ) == True:
+                    flash('You have successfully registered!')
+        
+        elif request.method == 'POST':
+            # Form is empty... (no POST data)
+            flash('Please fill out the form!')
+            # Show registration form with message (if any)
+        return render_template('register.html')
+
+@app.route('/logout')
+def logout():
+    # Remove session data, this will log the user out
+    session.pop('loggedin', None)
+    session.pop('id', None)
+    session.pop('username', None)
+    # Redirect to login page
+    return redirect(url_for('login'))
+                     
+@app.route('/profile')
+def profile(): 
+    #cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    # Check if user is loggedin
+    if 'loggedin' in session:
+        logging.warning("seesion[id]")
+        logging.warning([session['id']])
+        query = 'SELECT * FROM hydro.usrs WHERE id = %s'
+        arg = [session['id']]
+        account = pgSession(query, arg)
+        
+        #cursor.execute('SELECT * FROM hydro.usrs WHERE id = %s', [session['id']])
+        #account = cursor.fetchone()
+        # Show the profile page with account info
+        return render_template('profile.html', account=account)
+        # User is not loggedin redirect to login page
+    return redirect(url_for('login'))
+
+
 
 @app.route('/database')
 def datab():
@@ -70,6 +220,14 @@ def cards():
 @app.route('/Dash')
 def dash():
     return render_template('dash.html')
+
+@app.route('/testd')
+def testd():
+    return render_template('pro.html')
+
+@app.route('/pm')
+def pm():
+    return render_template('pm.html')
 
 @app.route('/ControlPanel', methods=['GET', 'POST'])
 def index():
@@ -98,49 +256,49 @@ def index():
     slice_ECSTATE = slice(3,7)
     ECSTATE = EC_State[slice_PHSTATE]
     
-    if request.method == 'POST':
-        if request.form.get('PH_ON') == 'PH_ON':
-            pubControls('/PHon')
+    if request.method == 'post':
+        if request.form.get('ph_on') == 'ph_on':
+            pubcontrols('/phon')
 
-        elif request.form.get('PH_OFF') == 'PH_OFF':
-            pubControls('/PHoff')
+        elif request.form.get('ph_off') == 'ph_off':
+            pubcontrols('/phoff')
 
-        elif request.form.get('PH_READ') == 'PH_READ':
-            pubControls('/PHread')
+        elif request.form.get('ph_read') == 'ph_read':
+            pubcontrols('/phread')
             time.sleep(5)
-            pubRControls('/PHread')
+            pubrcontrols('/phread')
 
-        elif request.form.get('EC_ON') == 'EC_ON':
-            pubControls('/ECon')
+        elif request.form.get('ec_on') == 'ec_on':
+            pubcontrols('/econ')
 
-        elif request.form.get('EC_OFF') == 'EC_OFF':
-            pubControls('/ECoff')
+        elif request.form.get('ec_off') == 'ec_off':
+            pubcontrols('/ecoff')
 
-        elif request.form.get('EC_READ') == 'EC_READ':
-            pubControls('/ECread')
-            pubRControls('/ECread')
+        elif request.form.get('ec_read') == 'ec_read':
+            pubcontrols('/ecread')
+            pubrcontrols('/ecread')
 
-        elif request.form.get('TEMP_ON') == 'TEMP_ON':
-            pubControls('/TEMPon')
+        elif request.form.get('temp_on') == 'temp_on':
+            pubcontrols('/tempon')
 
-        elif request.form.get('TEMP_OFF') == 'TEMP_OFF':
-            pubControls('/TEMPoff')
+        elif request.form.get('temp_off') == 'temp_off':
+            pubcontrols('/tempoff')
 
-        elif request.form.get('TEMP_READ') == 'TEMP_READ':
-            pubControls('/TEMPread')
-            pubRControls('/TEMPRead')
+        elif request.form.get('temp_read') == 'temp_read':
+            pubcontrols('/tempread')
+            pubrcontrols('/tempread')
 
-        elif request.form.get('MPUMP_ON') == 'ON':
-            pubControls('/MPUMPon')
+        elif request.form.get('mpump_on') == 'on':
+            pubcontrols('/mpumpon')
         
-        elif request.form.get('MPUMP_OFF') == 'OFF':
-            pubControls('/MPUMPoff')
+        elif request.form.get('mpump_off') == 'off':
+            pubcontrols('/mpumpoff')
 
-        elif request.form.get('AUTO') == 'AUTO':
-            pubAutoControl('/Auto')
+        elif request.form.get('auto') == 'auto':
+            pubautocontrol('/auto')
             
-    elif request.method == 'GET':
-        print("No Post Back Call")
+    elif request.method == 'get':
+        print("no post back call")
     
     
     return render_template("index.html", PHREAD=PHREADING, PHSTATE=PHSTATE, ECREAD=ECREADING, ECSTATE=ECSTATE)

@@ -9,7 +9,7 @@ import aiohttp
 import aioredis
 import async_timeout
 
-URL = 'http://10.243.199.34:5000'
+URL = 'http://10.243.199.34:8000'
 redis = aioredis.from_url("redis://redis", db=1)
 pubsub = redis.pubsub()
 logging.basicConfig(level=logging.INFO)

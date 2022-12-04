@@ -22,6 +22,31 @@ CREATE TABLE project.visitors(
     site_name text,
     visitor_count integer
 );
+
+CREATE TABLE hydro.usrs(
+	id serial PRIMARY KEY,
+	fullname VARCHAR ( 100 ) NOT NULL,
+	username VARCHAR ( 50 ) NOT NULL,
+	password VARCHAR ( 255 ) NOT NULL,
+	email VARCHAR ( 50 ) NOT NULL
+);
+
+
+
+CREATE TABLE hydro.stage(
+	ID BIGSERIAL PRIMARY KEY,
+	PLANTID INT REFERENCES hydro.plant (ID),
+	PERIOD INT NOT NULL,
+	INTRVL_WATER INT NOT NULL,
+	RANGE_EC  INT NOT NULL,
+	RANGE_PH INT NOT NULL,
+);
+
+CREATE TABLE hydro.role(
+	id INT PRIMARY KEY,
+	name TEXT UNIQUE,
+	description TEXT
+);
 CREATE TABLE hydro.hydrotable(
         ID BIGSERIAL PRIMARY KEY,
         TIMEZ TIMESTAMPTZ,
@@ -37,38 +62,38 @@ CREATE TABLE hydro.hydrotable(
         STATUS_PHDOWN TEXT NOT NULL,
         READING_WLEVEL FLOAT NOT NULL,
         STATUS_WLEVEL TEXT NOT NULL,
-	STAGEID INT REFERENCES hydro.stages (ID),
-	PLANTID INT REFERENCES hydro.plants (ID)
+	STAGEID INT REFERENCES hydro.stage (ID),
+	PLANTID INT REFERENCES hydro.plant (ID)
 );
 
 CREATE TABLE hydro.users(
-	ID BIGSERIAL PRIMARY KEY,
-	PLANTID INT REFERENCE hydro.plants (ID),
+	id TEXT PRIMARY KEY,
+	PLANTID INT REFERENCE hydro.plant (ID),
 	USERNAME TEXT NOT NULL,
 	PASSWORD TEXT NOT NULL,
+	first_name TEXT NOT NULL,
+	last_name TEXT NOT NULL,
+	email TEXT UNIQUE NOT NULL,
+	active BOOLEAN,
+	confirmed_at TIMESTAMPTZ,
+	roles VARCHAR,
+	FOREIGN KEY roles REFERENCES hydro.role (id) ON DELETE CASCADE
 );
 
-CREATE TABLE hydro.plants(
+CREATE TABLE hydro.plant(
 	ID BIGSERIAL PRIMARY KEY,
 	USERID INT REFERENCES hydro.users (ID),
 	PLANT_NAME TEXT NOT NULL,
 	INTRVL_WATER INT NOT NULL,
-	STAGEID INT REFERENCES hydro.stages (ID),
+	STAGEID INT REFERENCES hydro.stage (ID),
 );
 
-CREATE TABLE hydro.stages(
-	ID BIGSERIAL PRIMARY KEY,
-	PLANTID INT REFERENCES hydro.plants (ID),
-	PERIOD INT NOT NULL,
-	INTRVL_WATER INT NOT NULL,
-	RANGE_EC  INT NOT NULL,
-	RANGE_PH INT NOT NULL,
-);
 
 }
 ALTER TABLE project.visitors OWNER TO postgres;
 ALTER TABLE hydro.hydrotable OWNER TO postgres;
-ALTER TABLE hydro.plants OWNER TO postgres;
+ALTER TABLE hydro.plant OWNER TO postgres;
 ALTER TABLE hydro.users OWNER TO postgres;
-ALTER TABLE hydro.stages OWNER TO postgres;
+ALTER TABLE hydro.stage OWNER TO postgres;
+ALTER TABLE hydro.usrs OWNER TO postrgres;
 -- ALTER TABLE hydro.hydrotable ALTER COLUMN value NUMERIC(22,6)

@@ -1,18 +1,5 @@
 <!DOCTYPE html>
-<!-- <html lang="en"> -- >
 
-<!-- <head> 
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-	<!-- Boxicons -->
-	<link href='https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css' rel='stylesheet'>
-	<!-- My CSS -->
-	<link rel="stylesheet" href="static/dash_styles.css">
-
-	<title>Dashboard</title>
-</head>
- <body> -->
 
 
 {% extends "base.html" %}
@@ -22,7 +9,7 @@
 	<section id="sidebar">
 		<a href="#" class="brand">
 			<i class='bx bxs-smile'></i>
-			<span class="text">AdminHub</span>
+			<span class="text">HydroPro</span>
 		</a>
 		<ul class="side-menu top">
 			<li class="active">
@@ -32,27 +19,15 @@
 				</a>
 			</li>
 			<li>
-				<a href="#">
+				<a href="/ControlPanel">
 					<i class='bx bxs-shopping-bag-alt' ></i>
-					<span class="text">My Store</span>
+					<span class="text">Control Panel</span>
 				</a>
 			</li>
 			<li>
-				<a href="#">
+				<a href="/database">
 					<i class='bx bxs-doughnut-chart' ></i>
-					<span class="text">Analytics</span>
-				</a>
-			</li>
-			<li>
-				<a href="#">
-					<i class='bx bxs-message-dots' ></i>
-					<span class="text">Message</span>
-				</a>
-			</li>
-			<li>
-				<a href="#">
-					<i class='bx bxs-group' ></i>
-					<span class="text">Team</span>
+					<span class="text">Database</span>
 				</a>
 			</li>
 		</ul>
@@ -80,7 +55,7 @@
 		<!-- NAVBAR -->
 		<nav>
 			<i class='bx bx-menu' ></i>
-			<a href="#" class="nav-link">Categories</a>
+			<!-- <a href="#" class="nav-link">          </a> -->
 			<form action="#">
 				<div class="form-input">
 					<input type="search" placeholder="Search...">
@@ -101,7 +76,9 @@
 
 		<!-- MAIN -->
 		<main>
-			<div class="head-title">
+			{% block c %}
+			{% endblock%}
+		<!--	<div class="head-title">
 				<div class="left">
 					<h1>Dashboard</h1>
 					<ul class="breadcrumb">
@@ -233,14 +210,14 @@
 						</li>
 					</ul>
 				</div>
-			</div>
+			</div> -->
 		</main>
 		<!-- MAIN -->
 	</section>
 	<!-- CONTENT -->
 	
 
-<script src="static/dash_script.js"></script>
+<script src="static/js/dash_script.js"></script>
 {% endblock %}
 	<!-- </body> -->
 <!-- </html> -->
