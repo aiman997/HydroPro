@@ -1,146 +1,125 @@
-version: '3'
+version: '3.9'
 
 services:
-# flaskapp:
-#  build: ./web
-#  restart: always
-#  expose:
-#    - "8000"
-#  volumes:
-#    - ./web:/home/flask/app/web
-#  depends_on:
-#    - redis
-#    - postgres
-#  links:
-#    - redis
-#    - postgres
-#  environment:
-#    FLASK_DEBUG: 1
-#  deploy:
-#    mode: replicated
-#    replicas: 1
+  api:
+    container_name: api
+    restart: unless-stopped
+    build:
+      context: ./api
+      dockerfile: ./Dockerfile
+    ports:
+      - 8000:8000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 5m
+      timeout: 5s
+      retries: 3
+      start_period: 15s
 
- redis:
-   image: redis:alpine
-   restart: always
-   deploy:
-     mode: replicated
-     replicas: 1
+  caddy:
+    container_name: caddy
+    restart: unless-stopped
+    build:
+      context: ./caddy
+      dockerfile: ./Dockerfile
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./data/caddy_data:/data
+      - ./data/caddy_config:/config
+    depends_on:
+      - api
+    environment:
+      PROXY_BACKEND: api
+      PROXY_PORT: 8000
 
- flaskappn:
-   build: ./webN
-   restart: always
-   expose:
-    - "8006"
-   volumes:
-    - ./webN:/home/flask/app/webN
-   depends_on:
-    - redis
-    - postgres
-   environment:
-     FLASK_DEBUG: 1
-   deploy:
-    mode: replicated
-    replicas: 1
+  frontend:
+    container_name: frontend
+    build:
+      context: frontend
+    ports:
+      - 8001:8001
+    stdin_open: true
+    volumes:
+      - ./frontend:/usr/src/app
+      - /usr/src/app/node_modules
+    restart: always
+    depends_on:
+      - api
 
- ds:
-  build: ./datasource
-  restart: always
-  expose:
-    - "8001"
-  volumes:
-    - ./datasource:/home/flask/app/datasource
-  depends_on:
-    - redis
-    - postgres
-  links:
-    - redis
-    - postgres
+  nginx:
+    container_name: nginx
+    build: nginx/
+    restart: always
+    ports:
+      - "8002:8002"
+    deploy:
+      mode: replicated
+      replicas: 1
 
-  environment:
-    URL: 'http://192.168.101.26:80'
-    PYTHONASYNCIODEBUG: 1
-  deploy:
-     mode: replicated
-     replicas: 1
+  redis:
+    container_name: redis
+    image: redis:alpine
+    restart: always
+    deploy:
+      mode: replicated
+      replicas: 1
 
- sub:
-   build: ./subscriber
-   restart: always
-   expose:
-     - "8003"
-   volumes:
-     - ./subscriber:/home/flask/app/subscriber
-   depends_on:
-     - redis
-     - postgres
-   links:
-     - redis
-     - postgres
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    ports:
+      - 9090:9090
+    restart: unless-stopped
+    volumes:
+      - ./prometheus:/etc/prometheus
+      - prom_data:/prometheus
 
-   environment:
-     URL: 'http://192.168.101.26:80'
-     PYTHONASYNCIODEBUG: 1
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - 3000:3000
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=grafana
+    volumes:
+      - ./grafana:/etc/grafana/provisioning/datasources
 
-   deploy:
-     mode: replicated
-     replicas: 1
+  postgres:
+    container_name: postgres
+    restart: always
+    image: postgres:alpine
+    volumes:
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./postgres/data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: NxVhhyU9p3
+      POSTGRES_DB: hydrodb
+    ports:
+      - "5432:5432"
 
- auto:
-   build: ./autocontrol
-   restart: always
-   expose:
-     - "8004"
-   volumes:
-     - ./autocontrol:/home/flask/app/autocontrol
-   depends_on:
-     - redis
-     - postgres
+  pgadmin:
+    container_name: pgadmin
+    image: dpage/pgadmin4:latest
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=hydro@pgadmin.com
+      - PGADMIN_DEFAULT_PASSWORD=NxVhhyU9p3
+      - POSTGRES_USER=postgres
+      - POSTGRES_PW=NxVhhyU9p3
+      - POSTGRES_DB=hydrodb
+      - PGADMIN_MAIL=hydro@pgadmin.com
+      - PGADMIN_PW=NxVhhyU9p3
+      - PGADMIN_LISTEN_PORT=5050
+    ports:
+      - "5050:5050"
+    restart: always
 
-   environment:
-     URL: 'http://192.168.101.26:80'
-     PYTHONASYNCIODEBUG: 1
-   
-   deploy:
-     mode: replicated
-     replicas: 1
-
- automatic:
-   build: ./automatic
-   restart: always
-   expose:
-     - "8005"
-   volumes:
-     - ./automatic:/home/flask/app/automatic
-   depends_on:
-     - redis
-     - postgres
-   environment:
-     URL: 'http://192.168.101.26:80'
-     PYTHONASYNCIODEBUG: 1
-   deploy:
-     mode: replicated
-     replicas: 1
-       
- nginx:
-   build: nginx/
-   restart: always
-   ports:
-     - "80:80"
-   deploy:
-     mode: replicated
-     replicas: 1
-#  depends_on:
-#    - flaskappn
-
- postgres:
-   restart: always
-   image: postgres:alpine
-   volumes:
-     - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
-     - ./postgres/data:/var/lib/postgresql/data
-   environment:
-     POSTGRES_PASSWORD: eamon2hussien
-     POSTGRES_DB: hydrodb
-   expose:
-     - "5432"
+volumes:
+  prom_data:
+  caddy_data:
+  caddy_config:

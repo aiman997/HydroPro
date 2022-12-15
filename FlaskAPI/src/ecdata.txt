@@ -1,4 +1,0 @@
-kvalueLow=1.0
-kvalueHigh=1.0
-kvlo=1.36029412
-kvhi=1.44172662
