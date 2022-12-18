@@ -12,34 +12,20 @@ SET search_path = public, pg_catalog;
 SET default_tablespace = '';
 SET default_with_oids = false;
 SET timezone = +8;
--- SET timezone = 'Asia/Singapore Singapore';
--- AT TIME ZONE '-03:30',
-CREATE SCHEMA IF NOT EXISTS project;
-CREATE SCHEMA IF NOT EXISTS hydro;
 
-CREATE TABLE project.visitors(
-    site_id integer,
-    site_name text,
-    visitor_count integer
-);
+CREATE SCHEMA hydro;
 
-CREATE TABLE hydro.usrs(
-	id serial PRIMARY KEY,
-	fullname VARCHAR ( 100 ) NOT NULL,
-	username VARCHAR ( 50 ) NOT NULL,
-	password VARCHAR ( 255 ) NOT NULL,
-	email VARCHAR ( 50 ) NOT NULL
-);
-
-
-
-CREATE TABLE hydro.stage(
-	ID BIGSERIAL PRIMARY KEY,
-	PLANTID INT REFERENCES hydro.plant (ID),
-	PERIOD INT NOT NULL,
-	INTRVL_WATER INT NOT NULL,
-	RANGE_EC  INT NOT NULL,
-	RANGE_PH INT NOT NULL,
+CREATE TABLE hydro.user(
+	id TEXT PRIMARY KEY,
+	plant_id INT,
+	username TEXT NOT NULL,
+	password TEXT NOT NULL,
+	first_name TEXT NOT NULL,
+	last_name TEXT NOT NULL,
+	email TEXT UNIQUE NOT NULL,
+	active BOOLEAN,
+	confirmed_at TIMESTAMPTZ,
+	roles VARCHAR
 );
 
 CREATE TABLE hydro.role(
@@ -47,53 +33,45 @@ CREATE TABLE hydro.role(
 	name TEXT UNIQUE,
 	description TEXT
 );
-CREATE TABLE hydro.hydrotable(
-        ID BIGSERIAL PRIMARY KEY,
-        TIMEZ TIMESTAMPTZ,
-        STATUS_PH TEXT NOT NULL,
-        READING_PH FLOAT NOT NULL,
-        STATUS_EC TEXT NOT NULL,
-        READING_EC FLOAT NOT NULL,
-        STATUS_TEMP TEXT NOT NULL,
-        READING_TEMP FLOAT NOT NULL,
-        STATUS_MPUMP TEXT NOT NULL,
-        STATUS_ECUP TEXT  NOT NULL,
-        STATUS_PHUP TEXT NOT NULL,
-        STATUS_PHDOWN TEXT NOT NULL,
-        READING_WLEVEL FLOAT NOT NULL,
-        STATUS_WLEVEL TEXT NOT NULL,
-	STAGEID INT REFERENCES hydro.stage (ID),
-	PLANTID INT REFERENCES hydro.plant (ID)
-);
-
-CREATE TABLE hydro.users(
-	id TEXT PRIMARY KEY,
-	PLANTID INT REFERENCE hydro.plant (ID),
-	USERNAME TEXT NOT NULL,
-	PASSWORD TEXT NOT NULL,
-	first_name TEXT NOT NULL,
-	last_name TEXT NOT NULL,
-	email TEXT UNIQUE NOT NULL,
-	active BOOLEAN,
-	confirmed_at TIMESTAMPTZ,
-	roles VARCHAR,
-	FOREIGN KEY roles REFERENCES hydro.role (id) ON DELETE CASCADE
-);
 
 CREATE TABLE hydro.plant(
-	ID BIGSERIAL PRIMARY KEY,
-	USERID INT REFERENCES hydro.users (ID),
-	PLANT_NAME TEXT NOT NULL,
-	INTRVL_WATER INT NOT NULL,
-	STAGEID INT REFERENCES hydro.stage (ID),
+	id BIGSERIAL PRIMARY KEY,
+	user_id INT,
+	name TEXT NOT NULL,
+	stage INT
+);
+
+CREATE TABLE hydro.stage(
+	id BIGSERIAL PRIMARY KEY,
+	plant_id INT,
+	period INT NOT NULL,
+	intrvl_water INT NOT NULL,
+	range_ec  INT NOT NULL,
+	range_ph INT NOT NULL
+);
+
+CREATE TABLE hydro.reading(
+	id BIGSERIAL PRIMARY KEY,
+	timez TIMESTAMPTZ,
+	status_ph TEXT NOT NULL,
+	reading_ph FLOAT NOT NULL,
+	status_ec TEXT NOT NULL,
+	reading_ec FLOAT NOT NULL,
+	status_temp TEXT NOT NULL,
+	reading_temp FLOAT NOT NULL,
+	status_mpump TEXT NOT NULL,
+	status_ecup TEXT  NOT NULL,
+	status_phup TEXT NOT NULL,
+	status_phdown TEXT NOT NULL,
+	reading_wlevel FLOAT NOT NULL,
+	status_wlevel TEXT NOT NULL,
+	stage_id INT,
+	plant_id INT 
 );
 
 
-}
-ALTER TABLE project.visitors OWNER TO postgres;
-ALTER TABLE hydro.hydrotable OWNER TO postgres;
+ALTER TABLE hydro.reading OWNER TO postgres;
 ALTER TABLE hydro.plant OWNER TO postgres;
-ALTER TABLE hydro.users OWNER TO postgres;
+ALTER TABLE hydro.user OWNER TO postgres;
 ALTER TABLE hydro.stage OWNER TO postgres;
-ALTER TABLE hydro.usrs OWNER TO postrgres;
--- ALTER TABLE hydro.hydrotable ALTER COLUMN value NUMERIC(22,6)
+ALTER TABLE hydro.role OWNER TO postgres;
