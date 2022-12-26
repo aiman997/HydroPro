@@ -6,9 +6,10 @@ import logging
 import redis.asyncio as redis
 import aiohttp
 import websockets
-from dotenv import load_dotenv
+import os
+#from dotenv import load_dotenv
 
-load_dotenv()
+#load_dotenv()
 
 PREFIX = "HYDRO::PLANT"
 IP = os.environ.get('IP')
@@ -25,12 +26,15 @@ class RPI:
         self.redis = redis.Redis(host='redis', port=6379, decode_responses=True)
         self.channel_name = f"{PREFIX}::{ip}::CONTROLS"
 
-    async def publish_readings(self):
+    async def publish_readings(self, readings):
         readings['time'] = time.time()
         logging.info(f"Publishing readings at {time.time()}: {readings}")
-        await self.redis.xadd(name=f"{PREFIX}::{ip}::READINGS", fields=readings, id='*', maxlen=100, approximate=True, nomkstream=False, minid=None, limit=None)
+        try:
+            await self.redis.xadd(name=f"{PREFIX}::{IP}::READINGS", fields=readings, id='*', maxlen=100, approximate=True, nomkstream=False, minid=None, limit=None)
+        except Exception as e:
+            logging.error(e)
 
-    async def handel_readings(self, sensors):
+    async def handel_readings(self):
         ws = await websockets.connect(f'ws://{self.ip}:{self.port}/ws/all')
         while True:
             logging.info(f"Trying readings...")
@@ -38,8 +42,10 @@ class RPI:
                 await ws.send(READING_DURATION)
                 async with async_timeout.timeout(int(READING_DURATION)):
                     res = await ws.recv()
+                    logging.info(res)
                     readings = json.loads(res)
-                    await self.publish_readings(readings)
+                    if readings:
+                        await self.publish_readings(readings)
             except (asyncio.TimeoutError, json.decoder.JSONDecodeError) as e:
                 logging.error(e)
             await asyncio.sleep(10)

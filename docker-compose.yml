@@ -1,6 +1,21 @@
 version: '3.9'
 
 services:
+  rpi:
+    container_name: rpi
+    build:
+      context: ./hardware
+      dockerfile: ./Dockerfile
+    restart: always
+    volumes:
+      - ./hardware:/app/hardware
+    environment:
+      - IP=${RPI_IP}
+      - PORT=${RPI_PORT}
+    depends_on:
+      - redis
+      - postgres
+
   api:
     container_name: api
     restart: unless-stopped
