@@ -56,10 +56,10 @@ class Service:
         mkstream = False
       except ResponseError:
         mkstream = True
-        try:
-          await self.redis.xgroup_create(key, self.name, id=u'$', mkstream=mkstream)
-        except ResponseError:
-          pass
+      try:
+        await self.redis.xgroup_create(key, self.name, id=u'$', mkstream=mkstream)
+      except ResponseError:
+        pass
 
   def generate_worker_id(self):
     self.worker_id = self.name + f"-{uuid.uuid4()}"
