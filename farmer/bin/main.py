@@ -22,23 +22,23 @@ class RPI(Service):
 	def __init__(self, name, stream, streams, actions, redis_conn, metrics_provider):
 		Service.__init__(self, name, stream, streams, actions, redis_conn, metrics_provider)
 
-		async def handel_readings(self):
-			async for websocket in websockets.connect(f'ws://{IP}:{PORT}/ws/all'):
-				try:
-					await websocket.send(READING_DURATION)
-					res = await websocket.recv()
-					logging.info(f"Received: {type(res)}-{res}")
-					await self.send_event('update', json.loads(res))
-				except websockets.ConnectionClosed:
-					continue
-			await asyncio.sleep(SLEEP_DURATION)
-
-		async def handel_event(self, event):
+	async def handel_readings(self):
+		async for websocket in websockets.connect(f'ws://{IP}:{PORT}/ws/all'):
 			try:
-				if 'command' in event.keys():
-					logging.info(f"Sending message to control: {event}")
-			except Exception as e:
-				logging.error(f"Error: {e}")
+				await websocket.send(READING_DURATION)
+				res = await websocket.recv()
+				logging.info(f"Received: {type(res)}-{res}")
+				await self.send_event('update', json.loads(res))
+			except websockets.ConnectionClosed:
+				continue
+		await asyncio.sleep(SLEEP_DURATION)
+
+	async def handel_event(self, event):
+		try:
+			if 'command' in event.keys():
+				logging.info(f"Sending message to control: {event}")
+		except Exception as e:
+			logging.error(f"Error: {e}")
 
 async def main():
 	svc = RPI('rpi', 'readings', ['controls'], ['update'], redis.Redis(host='redis', port=6379, decode_responses=False), Pusher("rpi", PUSH_GATEWAY_ADDR, grouping_key={"instance": 'rpi'}))
