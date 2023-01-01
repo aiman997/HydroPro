@@ -1,17 +1,66 @@
 version: '3.9'
 
 services:
-  rpi:
-    container_name: rpi
-    build:
-      context: ./hardware
-      dockerfile: ./Dockerfile
-    restart: always
+  hydro:
+    build: 
+      context: ./
+      dockerfile: base/python/Dockerfile
+      args:
+        service_dir: "bot"
+    init: true
+    tty: true
+    container_name: hydro
+    restart: unless-stopped
     volumes:
-      - ./hardware:/app/hardware
+      - ./bot/bin:/app/bin
+      - ./base/Python/lib:/app/lib
     environment:
-      - IP=${RPI_IP}
-      - PORT=${RPI_PORT}
+      DATABASE: "postgresql://postgres"
+      LOG_LEVEL: "info"
+      REDIS: "redis://redis:6379"
+    depends_on:
+      - redis
+      - postgres
+
+  rpi:
+    build: 
+      context: ./
+      dockerfile: base/python/Dockerfile
+      args:
+        service_dir: "farmer"
+    init: true
+    tty: true
+    container_name: rpi
+    restart: unless-stopped
+    volumes:
+      - ./farmer/bin:/app/bin
+      - ./base/Python/lib:/app/lib
+    environment:
+      DATABASE: "postgresql://postgres"
+      LOG_LEVEL: "info"
+      REDIS: "redis://redis:6379"
+    depends_on:
+      - redis
+      - postgres
+
+  metrics:
+    build: 
+      context: ./
+      dockerfile: base/python/Dockerfile
+      args:
+        service_dir: "metrics"
+    init: true
+    tty: true
+    container_name: metrics
+    restart: unless-stopped
+    volumes:
+      - ./metrics/bin:/app/bin
+      - ./base/Python/lib:/app/lib
+    environment:
+      PORT: "8003"
+      DATABASE: "postgresql://postgres"
+      LOG_LEVEL: "info"
+      REDIS: "redis://redis:6379"
     depends_on:
       - redis
       - postgres
@@ -79,7 +128,13 @@ services:
     restart: always
     deploy:
       mode: replicated
-      replicas: 1
+      replicas: 1 
+      
+  prometheus-push-gateway:
+    container_name: prometheus-push-gateway
+    image: prom/pushgateway
+    ports:
+      - 9091:9091
 
   prometheus:
     image: prom/prometheus
