@@ -4,7 +4,7 @@ services:
   users:
     build: 
       context: ./
-      dockerfile: base/python/Dockerfile
+      dockerfile: base/Python/Dockerfile
       args:
         service_dir: "users"
     init: true
@@ -26,7 +26,7 @@ services:
   hydro:
     build: 
       context: ./
-      dockerfile: base/python/Dockerfile
+      dockerfile: base/Python/Dockerfile
       args:
         service_dir: "bot"
     init: true
@@ -47,7 +47,7 @@ services:
   rpi:
     build: 
       context: ./
-      dockerfile: base/python/Dockerfile
+      dockerfile: base/Python/Dockerfile
       args:
         service_dir: "farmer"
     init: true
@@ -73,7 +73,7 @@ services:
   metrics:
     build: 
       context: ./
-      dockerfile: base/python/Dockerfile
+      dockerfile: base/Python/Dockerfile
       args:
         service_dir: "metrics"
     init: true
