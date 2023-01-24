@@ -13,35 +13,55 @@ SET default_tablespace = '';
 SET default_with_oids = false;
 SET timezone = +8;
 
-CREATE SCHEMA hydro;
+CREATE SCHEMA users;
 
-CREATE TABLE hydro.user(
-	id TEXT PRIMARY KEY,
+CREATE TABLE users.user(
+	id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
 	plant_id INT,
-	username TEXT NOT NULL,
+	email TEXT UNIQUE NOT NULL,
 	password TEXT NOT NULL,
 	first_name TEXT NOT NULL,
 	last_name TEXT NOT NULL,
-	email TEXT UNIQUE NOT NULL,
 	active BOOLEAN,
 	confirmed_at TIMESTAMPTZ,
 	roles VARCHAR
 );
 
-CREATE TABLE hydro.role(
-	id INT PRIMARY KEY,
+CREATE TABLE users.role(
+	id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
 	name TEXT UNIQUE,
 	description TEXT
 );
 
-CREATE TABLE hydro.plant(
+CREATE OR REPLACE FUNCTION users.insert_user(
+	plant_id INT,
+	email TEXT,
+	password TEXT,
+	first_name TEXT,
+	last_name TEXT,
+	active BOOLEAN,
+	confirmed_at TIMESTAMPTZ,
+	roles VARCHAR
+)
+RETURNS BIGINT AS $$
+BEGIN
+	INSERT INTO users.user(plant_id, email, password, first_name, last_name, active, confirmed_at, roles)
+	VALUES (plant_id, email, password, first_name, last_name, active, confirmed_at, roles) RETURNING id;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE SCHEMA plants;
+
+CREATE TABLE plants.plant(
 	id BIGSERIAL PRIMARY KEY,
 	user_id INT,
 	name TEXT NOT NULL,
 	stage INT
 );
 
-CREATE TABLE hydro.stage(
+CREATE SCHEMA stages;
+
+CREATE TABLE stages.stage(
 	id BIGSERIAL PRIMARY KEY,
 	plant_id INT,
 	period INT NOT NULL,
@@ -50,7 +70,9 @@ CREATE TABLE hydro.stage(
 	range_ph INT NOT NULL
 );
 
-CREATE TABLE hydro.reading(
+CREATE SCHEMA rpi;
+
+CREATE TABLE rpi.reading(
 	id BIGSERIAL PRIMARY KEY,
 	timez TIMESTAMPTZ,
 	status_ph TEXT NOT NULL,

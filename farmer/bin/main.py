@@ -10,11 +10,11 @@ from lib.service import Service
 from aioprometheus.pusher import Pusher
 
 PREFIX = "HYDRO::PLANT"
-IP = os.environ.get('IP')
-PORT = os.environ.get('PORT')
-READING_DURATION = '15'
-SLEEP_DURATION = 10
-PUSH_GATEWAY_ADDR = "http://prometheus-push-gateway:9091"
+IP = os.environ.get('RPI_IP')
+PORT = os.environ.get('RPI_PORT')
+READING_DURATION = os.environ.get('READING_DURATION')
+SLEEP_DURATION = os.environ.get('SLEEP_DURATION')
+PUSH_GATEWAY_ADDR = os.environ.get('PUSH_GATEWAY_ADDR')
 
 logging.basicConfig(level=logging.INFO)
 
@@ -34,11 +34,13 @@ class RPI(Service):
 		await asyncio.sleep(SLEEP_DURATION)
 
 	async def handel_event(self, event):
+		logging.debug(f"Handling event: {event}")
 		try:
 			if 'command' in event.keys():
 				logging.info(f"Sending message to control: {event}")
 		except Exception as e:
 			logging.error(f"Error: {e}")
+		logging.debug(f"Event handled successfully")
 
 async def main():
 	svc = RPI('rpi', 'readings', ['controls'], ['update'], redis.Redis(host='redis', port=6379, decode_responses=False), Pusher("rpi", PUSH_GATEWAY_ADDR, grouping_key={"instance": 'rpi'}))

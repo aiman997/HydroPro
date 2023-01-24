@@ -7,8 +7,6 @@ from lib.service import Service
 from aioprometheus.pusher import Pusher
 
 PREFIX = "HYDRO::PLANT"
-IP = os.environ.get('IP')
-PORT = os.environ.get('PORT')
 PUSH_GATEWAY_ADDR = "http://prometheus-push-gateway:9091"
 
 logging.basicConfig(level=logging.INFO)
@@ -19,10 +17,12 @@ class Hydro(Service):
 			self.params = params
 
 		async def handel_event(self, event):
+			logging.debug(f"Handling event: {event}")
 			try:
 				await self.adjust(event)
 			except Exception as e:
 				logging.error(f"Error: {e}")
+			logging.debug(f"Event handled successfully")
 
 		async def execute_cmd(self, command, **kwargs):
 			await self.send_event('update', {'command': command})

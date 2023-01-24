@@ -1,6 +1,28 @@
 version: '3.9'
 
 services:
+  users:
+    build: 
+      context: ./
+      dockerfile: base/python/Dockerfile
+      args:
+        service_dir: "users"
+    init: true
+    tty: true
+    container_name: users
+    restart: unless-stopped
+    volumes:
+      - ./users/bin:/app/bin
+      - ./base/Python/lib:/app/lib
+    environment:
+      PORT: "${METRICS_PORT}"
+      DATABASE: "${DB}"
+      LOG_LEVEL: "${LOG_LEVEL}"
+      REDIS: "${REDIS}"
+    depends_on:
+      - redis
+      - postgres
+
   hydro:
     build: 
       context: ./
@@ -15,9 +37,9 @@ services:
       - ./bot/bin:/app/bin
       - ./base/Python/lib:/app/lib
     environment:
-      DATABASE: "postgresql://postgres"
-      LOG_LEVEL: "info"
-      REDIS: "redis://redis:6379"
+      DATABASE: "${DB}"
+      LOG_LEVEL: "${LOG_LEVEL}"
+      REDIS: "${REDIS}"
     depends_on:
       - redis
       - postgres
@@ -36,9 +58,14 @@ services:
       - ./farmer/bin:/app/bin
       - ./base/Python/lib:/app/lib
     environment:
-      DATABASE: "postgresql://postgres"
-      LOG_LEVEL: "info"
-      REDIS: "redis://redis:6379"
+      DATABASE: "${DB}"
+      LOG_LEVEL: "${LOG_LEVEL}"
+      REDIS: "${REDIS}"
+      RPI_IP: ${RPI_IP}
+      RPI_PORT: ${RPI_PORT}
+      PUSH_GATEWAY_ADDR: "${PUSH_GATEWAY_ADDR}"
+      READING_DURATION: "${READING_DURATION}"
+      SLEEP_DURATION: "${SLEEP_DURATION}"
     depends_on:
       - redis
       - postgres
@@ -57,10 +84,10 @@ services:
       - ./metrics/bin:/app/bin
       - ./base/Python/lib:/app/lib
     environment:
-      PORT: "8003"
-      DATABASE: "postgresql://postgres"
-      LOG_LEVEL: "info"
-      REDIS: "redis://redis:6379"
+      PORT: "${METRICS_PORT}"
+      DATABASE: "${DB}"
+      LOG_LEVEL: "${LOG_LEVEL}"
+      REDIS: "${REDIS}"
     depends_on:
       - redis
       - postgres
@@ -95,8 +122,8 @@ services:
     depends_on:
       - api
     environment:
-      PROXY_BACKEND: api
-      PROXY_PORT: 8000
+      PROXY_BACKEND: ${PROXY_BACKEND} 
+      PROXY_PORT: ${PROXY_PORT}
 
   frontend:
     container_name: frontend
@@ -155,8 +182,8 @@ services:
       - 3000:3000
     restart: unless-stopped
     environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=grafana
+      - GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
     volumes:
       - ./grafana:/etc/grafana/provisioning/datasources
 
@@ -168,8 +195,8 @@ services:
       - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
       - ./postgres/data:/var/lib/postgresql/data
     environment:
-      POSTGRES_PASSWORD: NxVhhyU9p3
-      POSTGRES_DB: hydrodb
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
 
@@ -180,10 +207,10 @@ services:
       - PGADMIN_DEFAULT_EMAIL=hydro@pgadmin.com
       - PGADMIN_DEFAULT_PASSWORD=NxVhhyU9p3
       - POSTGRES_USER=postgres
-      - POSTGRES_PW=NxVhhyU9p3
-      - POSTGRES_DB=hydrodb
-      - PGADMIN_MAIL=hydro@pgadmin.com
-      - PGADMIN_PW=NxVhhyU9p3
+      - POSTGRES_PW=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - PGADMIN_MAIL=${PGADMIN_MAIL}
+      - PGADMIN_PW=${PGADMIN_PW}
       - PGADMIN_LISTEN_PORT=5050
     ports:
       - "5050:5050"

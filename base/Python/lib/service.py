@@ -10,11 +10,12 @@ import redis.asyncio as redis
 import os
 from aioprometheus import REGISTRY, Counter, Gauge
 from aioprometheus.pusher import Pusher
-from aioprometheus import Counter
+from aioprometheus import Counter, Gauge
+
 
 class Service:
   pending_event_timeout = 30000
-  worker_timeout        = 30000
+  worker_timeout = 30000
 
   def __init__(self, name, stream, streams, actions, redis_conn, metrics_provider):
     self.name = name
@@ -22,9 +23,11 @@ class Service:
     self.redis = redis_conn
     self.events = dict()
     self.pusher = metrics_provider
-    self.counter = Counter(self.name, "Events count")
+    self.counter = Counter(self.name+'_events', "Events count")
+    self.workergauge = Gauge('workers', "Number of workers spawned")
     self.streams = streams
     self.actions = actions
+    self.workergauge.set({'type': self.name}, 0)
 
   async def send_event(self, action, data={}):
     event = Event(stream=self.stream, action=action, data=data)
@@ -34,20 +37,28 @@ class Service:
   async def listen(self):
     service_events = self.streams
     service_actions = self.actions
-    await self.create_consumer_group()
-    streams = {key: ">" for key in service_events}
-    self.generate_worker_id()
-    await self.claim_and_handle_pending_events()
-    await self.clear_idle_workers()
+    try:
+        await self.create_consumer_group()
+        streams = {key: ">" for key in service_events}
+        self.generate_worker_id()
+        await self.claim_and_handle_pending_events()
+        await self.clear_idle_workers()
+    except Exception as e:
+        logging.error(f"Error creating consumer group: {e}")
+        return
     while True:
-      event = await self.redis.xreadgroup(self.name, self.worker_id, streams, 1, 0)
-      e = Event(event=event)
-      if e.action in service_actions:
-        result = await self.handel_event(e.data)
-        logging.debug(f"{datetime.now()} - XACK Stream: {e.stream} - {e.event_id}: {e.action} {e.data}")
-        await self.redis.xack(e.stream, self.name, e.event_id)
-        self.counter.inc({'type': e.stream + e.action})
-        resp = await self.pusher.replace(REGISTRY)
+        try:
+          event = await self.redis.xreadgroup(self.name, self.worker_id, streams, 1, 0)
+          e = Event(event=event)
+          if e.action in service_actions:
+              result = await self.handel_event(e.data)
+              logging.debug(
+                  f"{datetime.now()} - XACK Stream: {e.stream} - {e.event_id}: {e.action} {e.data}")
+              await self.redis.xack(e.stream, self.name, e.event_id)
+              self.counter.inc({'type': e.stream + e.action})
+              resp = await self.pusher.replace(REGISTRY)
+        except Exception as e:
+          logging.error(f"Error handling event: {e}")
 
   async def create_consumer_group(self):
     for key in self.streams:
@@ -62,6 +73,7 @@ class Service:
         pass
 
   def generate_worker_id(self):
+    self.workergauge.inc({'type': self.name})
     self.worker_id = self.name + f"-{uuid.uuid4()}"
     return self.worker_id
 
@@ -90,3 +102,4 @@ class Service:
       for worker in existing_workers:
         if worker['idle'] > self.worker_timeout:
           await self.redis.xgroup_delconsumer(k, self.name, worker['name'])
+          self.workergauge.dec({'type': self.name})
