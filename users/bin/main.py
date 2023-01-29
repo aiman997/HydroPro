@@ -40,7 +40,7 @@ class Users(Service):
 					new_user_id = await conn.fetchval(f"INSERT INTO users.user(plant_id, email, password, first_name, last_name, active, roles) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id", plant_id, email, str(hashed_password), first_name, last_name, active, roles)
 					await conn.close()
 					logging.info(f"New user inserted with ID: {new_user_id}")
-						
+				
 				elif 'authuser' in event.keys():
 					email = event['authuser']['email']
 					password = event['authuser']['password']
@@ -68,7 +68,7 @@ class Users(Service):
 				logging.error(f"Error: {e}")
 
 			await self.send_event('newuser', event)
-			
+
 async def main():
 	svc = Users('users', 'users', ['api'], ['newuser', 'authuser', 'resetuser', 'deluser'], redis.Redis(host='redis', port=6379, decode_responses=False), Pusher("metric", PUSH_GATEWAY_ADDR, grouping_key={"instance": 'metric'}))
 	loop.create_task(svc.listen())
