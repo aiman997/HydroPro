@@ -2,8 +2,8 @@ FROM python:latest
 
 ARG service_dir
 
-COPY base/Python/lib /app/lib/
-COPY base/Python/requirements.txt /app/lib/
+COPY ../base/Python/lib /app/lib/
+COPY ./base/Python/requirements.txt /app/lib/
 WORKDIR /app/lib
 
 RUN echo "installing apt and pip deps" \
