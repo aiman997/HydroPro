@@ -5,6 +5,12 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials, OAuth2PasswordBear
 from pydantic import BaseModel
 from typing import Optional
 from fastapi import FastAPI
+import logging
+import redis.asyncio as redis
+from lib.event import Event
+
+logging = logging.getLogger("gunicorn.error")
+# logging.basicConfig(level=logging.DEBUG)
 
 SECRET_KEY = "mysecretkey"
 ALGORITHM = "HS256"
@@ -23,6 +29,12 @@ class User(BaseModel):
     email: str
     password: str
     rpi_address: str
+    first_name: str
+    last_name: str
+    plant_id: int
+    active: bool
+    roles: str
+
 
 users_db = []
 
@@ -41,13 +53,25 @@ async def get_user(credentials: HTTPBasicCredentials):
                 return user
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
 
+async def send_event(stream, action, data={}):
+    try:
+        event = Event(stream=stream, action=action, data=data)
+        await event.publish(redis.Redis(host='redis', port=6379, decode_responses=False))
+        logging.info("success")
+    except Exception as e:
+        logging.error("fail"+e)
+
 @app.post("/users/")
 async def create_user(user: User):
-    hashed_password = bcrypt.hashpw(user.password.encode(), bcrypt.gensalt())
-    user.password = hashed_password.decode()
+    try:
+        await send_event("api", "newuser", {"newuser":{"email": user.email, "rpi_address":user.rpi_address, "password":user.password, "first_name":user.first_name, "last_name":user.last_name, "plant_id":user.plant_id, "active":user.active, "roles":user.roles}})
+        #xadd send event to redis
+        # users_db.append(user)
+        logging.info("Successful") 
+        return {"email": user.email, "rpi_address": user.rpi_address, "password":user.password, "first_name":user.first_name, "last_name":user.last_name, "plant_id":user.plant_id, "active":user.active, "roles":user.roles} 
 
-    users_db.append(user)
-    return {"email": user.email, "rpi_address": user.rpi_address}
+    except Exception as e: 
+        return {"code": 504, "message": "Failed to create user"}
 
 @app.post("/auth")
 async def authenticate_user(credentials: HTTPBasicCredentials = Depends(security)):

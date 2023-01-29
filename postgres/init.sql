@@ -23,7 +23,7 @@ CREATE TABLE users.user(
 	first_name TEXT NOT NULL,
 	last_name TEXT NOT NULL,
 	active BOOLEAN,
-	confirmed_at TIMESTAMPTZ,
+	confirmed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 	roles VARCHAR
 );
 

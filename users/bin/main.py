@@ -1,15 +1,21 @@
 import os
 import asyncio
+import asyncpg
 import logging
 import redis.asyncio as redis
 from lib.service import Service
 from aioprometheus import Gauge
 from aioprometheus.pusher import Pusher
+import bcrypt
 
-PREFIX = "HYDRO::USER::"
+DB			     = os.environ.get('DB')
+PREFIX            = "HYDRO::USER::"
+PUSH_GATEWAY_ADDR = os.environ.get('PUSH_GATEWAY_ADDR')
 PUSH_GATEWAY_ADDR = "http://prometheus-push-gateway:9091"
+POSTGRES_NAME     = os.environ.get('POSTGRES_DB')
+POSTGRES_PASSWORD = os.environ.get('POSTGRES_PASSWORD')
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 
 class Users(Service):
 		def __init__(self, name, stream, streams, actions, redis_conn, metrics_provider):
@@ -35,7 +41,6 @@ class Users(Service):
 					await conn.close()
 					logging.info(f"New user inserted with ID: {new_user_id}")
 						
-
 				elif 'authuser' in event.keys():
 					email = event['authuser']['email']
 					password = event['authuser']['password']
@@ -64,14 +69,13 @@ class Users(Service):
 
 			await self.send_event('newuser', event)
 			
-  
 async def main():
-  svc = Users('users', 'users', ['api'], ['newuser', 'authuser', 'resetuser', 'deluser'], redis.Redis(host='redis', port=6379, decode_responses=False), Pusher("metric", PUSH_GATEWAY_ADDR, grouping_key={"instance": 'metric'}))
-  loop.create_task(svc.listen())
+	svc = Users('users', 'users', ['api'], ['newuser', 'authuser', 'resetuser', 'deluser'], redis.Redis(host='redis', port=6379, decode_responses=False), Pusher("metric", PUSH_GATEWAY_ADDR, grouping_key={"instance": 'metric'}))
+	loop.create_task(svc.listen())
 
 if __name__ == '__main__':
-  loop = asyncio.new_event_loop()
-  asyncio.set_event_loop(loop)
-  logging.info(f"Starting...")
-  loop.create_task(main())
-  loop.run_forever()
+	loop = asyncio.new_event_loop()
+	asyncio.set_event_loop(loop)
+	logging.info(f"Starting...")
+	loop.run_until_complete(main())
+	loop.run_forever()
