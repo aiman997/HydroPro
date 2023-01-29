@@ -17,7 +17,7 @@ class Hydro(Service):
 			self.params = params
 
 		async def handel_event(self, event):
-			logging.debug(f"Handling event: {event}")
+			logging.info(f"Handling event: {event}")
 			try:
 				await self.adjust(event)
 			except Exception as e:
