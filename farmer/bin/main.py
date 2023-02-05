@@ -1,57 +1,85 @@
-import asyncio
-import async_timeout
-import time
+import os
 import json
+import asyncio
 import logging
 import redis.asyncio as redis
-import websockets
-import os
 from lib.service import Service
 from aioprometheus.pusher import Pusher
 
 PREFIX = "HYDRO::PLANT"
-IP = os.environ.get('RPI_IP')
-PORT = os.environ.get('RPI_PORT')
-READING_DURATION = os.environ.get('READING_DURATION')
-SLEEP_DURATION = 1800 # os.environ.get('SLEEP_DURATION')
-PUSH_GATEWAY_ADDR = os.environ.get('PUSH_GATEWAY_ADDR')
+PUSH_GATEWAY_ADDR = "http://prometheus-push-gateway:9091"
 
 logging.basicConfig(level=logging.INFO)
 
-class RPI(Service):
-    def __init__(self, name, stream, streams, actions, redis_conn, metrics_provider):
-        Service.__init__(self, name, stream, streams, actions, redis_conn, metrics_provider)
+class Hydro(Service):
+		def __init__(self, name, stream, streams, actions, redis_conn, metrics_provider, params):
+			Service.__init__(self, name, stream, streams, actions, redis_conn, metrics_provider)
+			self.params = params
+			self.rpcs.append('rpc_test')
 
-    async def handel_readings(self):
-        while (1): 
-            async for websocket in websockets.connect(f'ws://{IP}:{PORT}/ws/all'):
-                try:
-                    await websocket.send(READING_DURATION)
-                    res = await websocket.recv()
-                    logging.info(f"Received: {type(res)}-{res}")
-                    await self.send_event('update', json.loads(res))
-                except websockets.ConnectionClosed:
-                    logging.info('Websocket connection closed')
-                    continue
-                await asyncio.sleep(SLEEP_DURATION)
+		@Service.rpc
+		async def rpc_test (self):
+			logging.info('recieved call from app')
+			return {"success": 1}
 
-    async def handel_event(self, event):
-        logging.debug(f"Handling event: {event}")
-        try:
-            if 'command' in event.keys():
-                logging.info(f"Sending message to control: {event}")
-        except Exception as e:
-            logging.error(f"Error: {e}")
-        logging.debug(f"Event handled successfully")
+		async def handel_event(self, event):
+			logging.info(f"Handling event: {event}")
+			try:
+				await self.adjust(event)
+			except Exception as e:
+				logging.error(f"Error: {e}")
+			logging.debug(f"Event handled successfully")
+
+		async def execute_cmd(self, command, **kwargs):
+			await self.send_event('update', {'command': command})
+
+		async def adjust(self, args, **kwargs):
+			logging.info(f"Sending message to rpi {args}: {kwargs}")
+			if float(args["ec"]) < float(self.params["EC_MIN"]):
+				logging.info("Turning on ECUP pump for 3 seconds")
+				await self.execute_cmd("pec")
+				logging.info("Turning on MAIN pump for 5 minutes / 40 Liters")
+				await self.execute_cmd("mp")
+				logging.info("Turning off MAIN pump for 5 minutes  / until waterlevel sensor detects water")
+				await self.execute_cmd("mp")
+
+			if float(args["ec"]) > float(self.params["EC_MAX"]):
+				logging.info("Turning on Solenoid Valve Out for 2 minutes / 10 Liters")
+				await self.execute_cmd("svo")
+				logging.info("Turning off Solenoid Valve OUT")
+				await self.execute_cmd("svo")
+				logging.info("Turning on Solenoid Valve In for 2 minutes / 10 Liters / Until waterlevel sensor detects water")
+				await self.execute_cmd("svi")
+				logging.info("Turning on MAIN pump for 5 minutes / 40 Liters")
+				await self.execute_cmd("mp")
+				logging.info("Turning off MAIN pump for 5 minutes  / until waterlevel sensor detects water")
+				await self.execute_cmd("mp")
+
+			if float(args["ph"]) < float(self.params["PH_MIN"]):
+				logging.info("Turning on PHUP pump for 3 seconds")
+				await self.execute_cmd("phu")
+				logging.info("Turning on MAIN pump for 5 minutes / 40 Liters")
+				await self.execute_cmd("mp")
+				logging.info("Turning off MAIN pump for 5 minutes  / until waterlevel sensor detects water")
+				await self.execute_cmd("mp")
+
+			if float(args["ph"]) > float(self.params["PH_MAX"]):
+				logging.info("Turning on PHDWN pump for 3 seconds")
+				await self.execute_cmd("phd")
+				logging.info("Turning on MAIN pump for 5 minutes / 40 Liters")
+				await self.execute_cmd("mp")
+				logging.info("Turning off MAIN pump for 5 minutes  / until waterlevel sensor detects water")
+				await self.execute_cmd("mp")
 
 async def main():
-    svc = RPI('rpi', 'readings', ['controls'], ['update'], redis.Redis(host='redis', port=6379, decode_responses=False), Pusher("rpi", PUSH_GATEWAY_ADDR, grouping_key={"instance": 'rpi'}))
-    loop.create_task(svc.listen())
-    loop.create_task(svc.handel_readings())
+	with open('/app/param.json') as json_file:
+		param = json.load(json_file)
+		svc = Hydro('hydro', 'controls', ['readings', 'api'], ['update', 'ping'], redis.Redis(host='redis', port=6379, decode_responses=False), Pusher("hydro", PUSH_GATEWAY_ADDR, grouping_key={"instance": 'hydro'}), param['Cucumber']["Stage1"])
+		loop.create_task(svc.listen())
 
 if __name__ == '__main__':
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    logging.info(f"Starting...")
-    loop.create_task(main())
-    loop.run_forever()
+  loop = asyncio.new_event_loop()
+  asyncio.set_event_loop(loop)
+  logging.info(f"Starting...")
+  loop.create_task(main())
+  loop.run_forever()

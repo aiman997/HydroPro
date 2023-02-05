@@ -3,6 +3,7 @@
 *.py[cod]
 *$py.class
 *.python-version
+data/
 
 # Flask stuff:
 instance/
