@@ -8,6 +8,7 @@ from fastapi import FastAPI
 import logging
 import redis.asyncio as redis
 from lib.event import Event
+import asyncio
 
 logging = logging.getLogger("gunicorn.error")
 # logging.basicConfig(level=logging.DEBUG)
@@ -38,9 +39,18 @@ class User(BaseModel):
 
 users_db = []
 
+redis = redis.Redis(host='redis', port=6379, decode_responses=True)
+pubsub = redis.pubsub()
+
 @app.get("/")
-def read_root():
-    return {"Hello": "World"}
+async def read_root():
+    await pubsub.subscribe("somekey")
+    await send_event('api', 'ping', {"rpc":{ 'key': 'somekey'}})
+    # while not message nor time limit sleep
+    await asyncio.sleep(10)
+    res = await pubsub.get_message()
+    logging.info(res)
+    return res
 
 @app.get("/health")
 def read_root():
@@ -56,10 +66,10 @@ async def get_user(credentials: HTTPBasicCredentials):
 async def send_event(stream, action, data={}):
     try:
         event = Event(stream=stream, action=action, data=data)
-        await event.publish(redis.Redis(host='redis', port=6379, decode_responses=False))
+        await event.publish(redis)
         logging.info("success")
     except Exception as e:
-        logging.error("fail"+e)
+        logging.error(f"failied with error: {e}")
 
 @app.post("/users/")
 async def create_user(user: User):
@@ -67,10 +77,10 @@ async def create_user(user: User):
         await send_event("api", "newuser", {"newuser":{"email": user.email, "rpi_address":user.rpi_address, "password":user.password, "first_name":user.first_name, "last_name":user.last_name, "plant_id":user.plant_id, "active":user.active, "roles":user.roles}})
         #xadd send event to redis
         # users_db.append(user)
-        logging.info("Successful") 
-        return {"email": user.email, "rpi_address": user.rpi_address, "password":user.password, "first_name":user.first_name, "last_name":user.last_name, "plant_id":user.plant_id, "active":user.active, "roles":user.roles} 
+        logging.info("Successful")
+        return {"email": user.email, "rpi_address": user.rpi_address, "password":user.password, "first_name":user.first_name, "last_name":user.last_name, "plant_id":user.plant_id, "active":user.active, "roles":user.roles}
 
-    except Exception as e: 
+    except Exception as e:
         return {"code": 504, "message": "Failed to create user"}
 
 @app.post("/auth")
@@ -139,7 +149,7 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
             raise HTTPException(status_code=400, detail="Invalid token")
         return email
     except Exception(e):
-        raise HTTPException(status_code=400, detail="Invalid token")    
+        raise HTTPException(status_code=400, detail="Invalid token")
 
 @app.post("/token")
 def login(email: str, password: str):

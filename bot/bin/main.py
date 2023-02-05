@@ -15,6 +15,12 @@ class Hydro(Service):
 		def __init__(self, name, stream, streams, actions, redis_conn, metrics_provider, params):
 			Service.__init__(self, name, stream, streams, actions, redis_conn, metrics_provider)
 			self.params = params
+			self.rpcs.append('rpc_test')
+
+		@Service.rpc
+		async def rpc_test (self):
+			logging.info('recieved call from app')
+			return {"success": 1}
 
 		async def handel_event(self, event):
 			logging.info(f"Handling event: {event}")
@@ -68,7 +74,7 @@ class Hydro(Service):
 async def main():
 	with open('/app/param.json') as json_file:
 		param = json.load(json_file)
-		svc = Hydro('hydro', 'controls', ['readings'], ['update'], redis.Redis(host='redis', port=6379, decode_responses=False), Pusher("hydro", PUSH_GATEWAY_ADDR, grouping_key={"instance": 'hydro'}), param['Cucumber']["Stage1"])
+		svc = Hydro('hydro', 'controls', ['readings', 'api'], ['update', 'ping'], redis.Redis(host='redis', port=6379, decode_responses=False), Pusher("hydro", PUSH_GATEWAY_ADDR, grouping_key={"instance": 'hydro'}), param['Cucumber']["Stage1"])
 		loop.create_task(svc.listen())
 
 if __name__ == '__main__':

@@ -8,12 +8,10 @@ from aioprometheus import Gauge
 from aioprometheus.pusher import Pusher
 import bcrypt
 
-DB			     = os.environ.get('DB')
+DB			     = 'postgresql://postgres:NxVhhyU9p3@postgres/hydrodb' # os.environ.get('DB')
 PREFIX            = "HYDRO::USER::"
 PUSH_GATEWAY_ADDR = os.environ.get('PUSH_GATEWAY_ADDR')
 PUSH_GATEWAY_ADDR = "http://prometheus-push-gateway:9091"
-POSTGRES_NAME     = os.environ.get('POSTGRES_DB')
-POSTGRES_PASSWORD = os.environ.get('POSTGRES_PASSWORD')
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -21,27 +19,36 @@ class Users(Service):
 		def __init__(self, name, stream, streams, actions, redis_conn, metrics_provider):
 			Service.__init__(self, name, stream, streams, actions, redis_conn, metrics_provider)
 			self.newusers_metric = Gauge("newusers", "Users registered")
-			
+			self.rpcs.append('newuser')
+
+		@Service.rpc
+		async def newuser(self, event):
+			logging.info(event)
+			try:
+				conn = await asyncpg.connect(dsn=DB)
+				email = event['email']
+				password = event['password']
+				rpi_address = event['rpi_address']
+				first_name = event['first_name']
+				last_name = event['last_name']
+				plant_id = event['plant_id']
+				active = event['active']
+				roles = event['roles']
+				hashed_password = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
+				new_user_id = await conn.fetchval(f"INSERT INTO users.user(plant_id, email, password, first_name, last_name, active, roles) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id", plant_id, email, str(hashed_password), first_name, last_name, active, roles)
+				await conn.close()
+				return {"success": 1, "user_id": new_user_id}
+			except Exception as e:
+				logging.error(f"Error while newuser: {e}")
+				return {"error": e}
+
+
 		async def handel_event(self, event):
 			logging.info(event)
 
 			try:
 				conn = await asyncpg.connect(dsn=DB)
-				if 'newuser' in event.keys():
-					email = event['newuser']['email']  
-					password = event['newuser']['password']
-					rpi_address = event['newuser']['rpi_address']
-					first_name = event['newuser']['first_name']
-					last_name = event['newuser']['last_name']
-					plant_id = event['newuser']['plant_id']
-					active = event['newuser']['active']
-					roles = event['newuser']['roles']
-					hashed_password = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
-					new_user_id = await conn.fetchval(f"INSERT INTO users.user(plant_id, email, password, first_name, last_name, active, roles) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id", plant_id, email, str(hashed_password), first_name, last_name, active, roles)
-					await conn.close()
-					logging.info(f"New user inserted with ID: {new_user_id}")
-				
-				elif 'authuser' in event.keys():
+				if 'authuser' in event.keys():
 					email = event['authuser']['email']
 					password = event['authuser']['password']
 					result = await conn.fetchrow("SELECT * FROM users.user WHERE email = $1", email)
@@ -64,6 +71,7 @@ class Users(Service):
 				else:
 					logging.error(f"Error: Invalid event")
 
+				await conn.close()
 			except Exception as e:
 				logging.error(f"Error: {e}")
 

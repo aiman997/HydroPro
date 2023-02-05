@@ -92,11 +92,11 @@ services:
       - redis
       - postgres
 
-  api:
-    container_name: api
+  wsapi:
+    container_name: wsapi
     restart: unless-stopped
     build:
-      context: ./api
+      context: ./wsapi
       dockerfile: ./Dockerfile
     ports:
       - 8000:8000
@@ -107,6 +107,8 @@ services:
       - redis
     volumes:
       - ./base/Python/lib:/app/lib
+      - ./wsapi/main.py:/app/main.py
+      - ./wsapi/manger.py:/app/manger.py
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 5m
@@ -127,7 +129,7 @@ services:
       - ./data/caddy_data:/data
       - ./data/caddy_config:/config
     depends_on:
-      - api
+      - wsapi
     environment:
       PROXY_BACKEND: ${PROXY_BACKEND} 
       PROXY_PORT: ${PROXY_PORT}

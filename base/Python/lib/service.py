@@ -11,7 +11,8 @@ import os
 from aioprometheus import REGISTRY, Counter, Gauge
 from aioprometheus.pusher import Pusher
 from aioprometheus import Counter, Gauge
-
+from functools import wraps
+import redis.asyncio as redis
 
 class Service:
   pending_event_timeout = 30000
@@ -28,6 +29,18 @@ class Service:
     self.streams = streams
     self.actions = actions
     self.workergauge.set({'type': self.name}, 0)
+    self.rpcs = []
+
+  def get_rpcs(self):
+    return self.rpcs
+
+  def rpc(func):
+    async def wrapFunc(self, args):
+      args = dict(args)
+      res = await func(self, args)
+      await self.redis.publish(args['auth'], str(res))
+      logging.info(f"published {res} on "+args['auth'])
+    return wrapFunc
 
   async def send_event(self, action, data={}):
     event = Event(stream=self.stream, action=action, data=data)
@@ -51,14 +64,14 @@ class Service:
           event = await self.redis.xreadgroup(self.name, self.worker_id, streams, 1, 0)
           e = Event(event=event)
           if e.action in service_actions:
-              result = await self.handel_event(e.data)
+              result = await self.process_event(e)
               logging.debug(
                   f"{datetime.now()} - XACK Stream: {e.stream} - {e.event_id}: {e.action} {e.data}")
               await self.redis.xack(e.stream, self.name, e.event_id)
               self.counter.inc({'type': e.stream + e.action})
               resp = await self.pusher.replace(REGISTRY)
         except Exception as e:
-          logging.error(f"Error handling event: {e}")
+          logging.error(f"Error processing event: {e}")
 
   async def create_consumer_group(self):
     for key in self.streams:
@@ -92,7 +105,7 @@ class Service:
             e = Event(event=formatted_event)
             if e.action in actions:
               logging.debug(f"{datetime.now()} - XACK Stream: {e.stream} - {e.event_id}: {e.action} {e.data}")
-              await self.handel_event(e.data)
+              await self.process_event(e)
               await self.redis.xack(e.stream, self.name, e.event_id)
               resp = await self.pusher.replace(REGISTRY)
 
@@ -103,3 +116,16 @@ class Service:
         if worker['idle'] > self.worker_timeout:
           await self.redis.xgroup_delconsumer(k, self.name, worker['name'])
           self.workergauge.dec({'type': self.name})
+
+  async def process_event(self, e):
+    rpcs = self.get_rpcs()
+    if e.action in rpcs:
+      method = e.action
+      try:
+          method = getattr(self, method)
+      except AttributeError:
+          raise NotImplementedError("Class `{}` does not implement `{}`".format(self.__class__.__name__, method_name))
+      result = await method(e.data)
+    else:
+      result = await self.handel_event(e.data)
+    return result

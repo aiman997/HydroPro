@@ -18,7 +18,7 @@ class Metrics(Service):
 			Service.__init__(self, name, stream, streams, actions, redis_conn, metrics_provider)
 			self.readings_metric = Gauge("readings", "Sensor readings")
 			self.controls_metric = Gauge("controls", "Motor controls")
-  
+
 		async def handel_event(self, event):
 			try:
 				if 'command' in event.keys():
@@ -30,7 +30,7 @@ class Metrics(Service):
 			except Exception as e:
 				logging.error(f"Error: {e}")
 			await self.send_event('pushed', event)
-  
+
 async def main():
   svc = Metrics('metric', 'metrics', ['readings', 'controls'], ['update'], redis.Redis(host='redis', port=6379, decode_responses=False), Pusher("metric", PUSH_GATEWAY_ADDR, grouping_key={"instance": 'metric'}))
   loop.create_task(svc.listen())
