@@ -121,11 +121,12 @@ class Service:
     rpcs = self.get_rpcs()
     if e.action in rpcs:
       method = e.action
+      result = None
       try:
           method = getattr(self, method)
+          result = await method(e.data)
       except AttributeError:
           raise NotImplementedError("Class `{}` does not implement `{}`".format(self.__class__.__name__, method_name))
-      result = await method(e.data)
     else:
       result = await self.handel_event(e.data)
     return result

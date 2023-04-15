@@ -1,120 +1,50 @@
 import json
-import asyncio
 import logging
+import asyncio
 import bcrypt
-import datetime
-from fastapi import FastAPI, HTTPException, Depends, status, WebSocket, WebSocketDisconnect
-from fastapi.security import HTTPBasic, HTTPBasicCredentials, OAuth2PasswordBearer
+from datetime import datetime, timezone, timedelta
+from typing import Union, Optional
+from fastapi import (
+	Cookie,
+	Depends,
+	FastAPI,
+	Query,
+	WebSocket,
+	WebSocketException,
+	status,
+	WebSocketDisconnect,
+)
 from fastapi.responses import HTMLResponse
-from typing import Optional
+from fastapi.middleware import Middleware
+from fastapi.middleware.cors import CORSMiddleware
+from manger import ConnectionManager
 import redis.asyncio as redis
 from lib.event import Event
-from manger import ConnectionManager
+import jwt
+import os
 
-app = FastAPI()
-redis = redis.Redis(host='redis', port=6379, decode_responses=True)
+SECRET_KEY = "mysecretkey"
+
 logging = logging.getLogger("gunicorn.error")
-pubsub = redis.pubsub()
+root = os.path.dirname(os.path.abspath(__file__))
+
+origins = ["*"]
+
+middleware = [
+    Middleware(
+        CORSMiddleware,
+        allow_origins=origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    ),
+]
+
+app = FastAPI(middleware=middleware)
+
 manager = ConnectionManager()
-
-html = """
-<!DOCTYPE html>
-<html>
-	<head>
-		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
-		<style>
-		.container {
-			display: flex;
-			flex-direction: column;
-			align-items: center;
-			margin-top: 50px;
-		}
-
-		textarea {
-			width: 50%;
-			height: 150px;
-			padding: 10px;
-			font-size: 16px;
-			margin-bottom: 20px;
-		}
-		</style>
-		<script>
-		const random = (length = 8) => {
-			return Math.random().toString(16).substr(2, length);
-		};
-
-		function formatJson(jsonString) {
-			return JSON.stringify(JSON.parse(jsonString), null, 2);
-		}
-
-		function sendRequest() {
-			var socket = new WebSocket("ws://localhost:8000/ws");
-
-			socket.onopen = function (event) {
-			var request = {
-				type: "request",
-				auth: random(8),
-				data: document.getElementById("requestData").value
-			};
-			socket.send(JSON.stringify(request));
-			};
-
-			socket.onmessage = function (event) {
-			var response = formatJson(event.data);
-			document.getElementById("responseData").value = response;
-			};
-
-			socket.onerror = function (error) {
-			console.error("Error: " + error.message);
-			};
-		}
-		</script>
-	</head>
-	<body>
-		<div class="container">
-		<h1>WebSocket JSON Request/Response</h1>
-		<p>Enter your request data in the input field below:</p>
-		<textarea id="requestData" rows="4" cols="50"></textarea>
-		<button class="btn btn-primary" onclick="sendRequest()">Send Request</button>
-		<p>Response:</p>
-		<textarea id="responseData" rows="4" cols="50" readonly></textarea>
-		</div>
-	</body>
-</html>
-
-"""
-
-@app.get("/")
-async def get():
-	return HTMLResponse(html)
-
-@app.get("/health")
-async def get():
-	return "OK"
-
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-	await manager.connect(websocket)
-	try:
-		request     = await websocket.receive_text()
-		is_json_req = validate_json_request(request)
-		request     = json.loads(request)
-		if is_json_req:
-			data = json.loads(request['data'])
-			await pubsub.subscribe(request['auth'])
-			data['args']['auth'] = request['auth']
-			await send_event('api', data['action'], data['args'])
-			while True:
-				res = await pubsub.get_message(ignore_subscribe_messages=True, timeout=30)
-				if res is not None:
-					logging.info(res)
-					await manager.send_message(json.dumps({"echo_request": request['data'], "response": res}), websocket)
-					break
-		else:
-			await manager.send_message(json.dumps({"echo_request": request, "error": "Invalid json request"}), websocket)
-	except WebSocketDisconnect:
-		logging.info("Disconecting ws client")
-		manager.disconnect(websocket)
+redis = redis.Redis(host='redis', port=6379, decode_responses=True)
+pubsub = redis.pubsub()
 
 # Utils
 
@@ -126,9 +56,49 @@ def validate_json_request(json_request):
 			return True
 		else:
 			return False
-	except json.JSONDecodeError as e:
+	except Exception as e:
 		logging.error(f"Invalid request with error: {e}")
 		return False
+
+def validate_auth_request(json_request):
+	try:
+		request = json.loads(json_request)
+		data    = json.loads(request['data'])
+		if "type" in request and "data" in request:
+			return True
+		else:
+			return False
+	except Exception as e:
+		logging.error(f"Invalid request with error: {e}")
+		return False
+
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=15)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm="HS256")
+    return encoded_jwt
+
+def decode_access_token(token: str):
+    try:
+        decoded_token = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+        return str(decoded_token)
+    except jwt.ExpiredSignatureError:
+        return None
+    except jwt.InvalidTokenError:
+        return None
+
+async def get_cookie_or_token(
+	websocket: WebSocket,
+	session: Union[str, None] = Cookie(default=None),
+	token: Union[str, None] = Query(default=None),
+):
+	if session is None and token is None:
+		raise WebSocketException(code=status.WS_1008_POLICY_VIOLATION)
+	return session or token
 
 async def send_event(stream, action, data={}):
 	try:
@@ -137,3 +107,63 @@ async def send_event(stream, action, data={}):
 		logging.info("success")
 	except Exception as e:
 		logging.error(f"failied with error: {e}")
+
+# Routes
+
+@app.get("/")
+async def get():
+	with open(os.path.join(root, 'index.html')) as fh:
+		html = fh.read()
+	return HTMLResponse(html)
+
+@app.get("/health")
+async def get():
+	return "OK"
+
+@app.get("/token")
+async def get():
+	token = create_access_token(dict())
+	return token
+
+"""
+{
+	"type": "action",
+	"data": "{
+		"action": "newuser",
+		"args":{
+			"first_name": "blablabla"
+		}"
+	}
+}
+"""
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket, q: Union[int, None] = None, cookie_or_token: str = Depends(get_cookie_or_token) ):
+	try:
+		await manager.connect(websocket)
+		while True:
+			request = await websocket.receive_text()
+			if not validate_json_request(request) or not validate_auth_request(request):
+				await manager.send_message(json.dumps({"echo_request": request, "error": "Invalid json request"}), websocket)
+			decoded_token = decode_access_token(cookie_or_token)
+			logging.info(decoded_token + '   ' +cookie_or_token)
+			if decoded_token is None:
+					raise WebSocketException(code=status.WS_1008_POLICY_VIOLATION)
+			await pubsub.subscribe(decoded_token)
+			request = json.loads(request)
+			data = json.loads(request['data'])
+			args = data['args']
+			args['auth'] = decoded_token
+			await send_event('api', data['action'], args)
+			try:
+				res = await asyncio.wait_for(pubsub.get_message(ignore_subscribe_messages=True, timeout=30), timeout=30.0)
+				if res is not None:
+					# Check rate limit before sending messages
+					await manager.send_message(json.dumps({"echo_request": data, "response": res}), websocket)
+				else:
+					await manager.send_message(json.dumps({"echo_request": request, "error": "No response"}), websocket)
+				await pubsub.unsubscribe(decoded_token)
+			except TimeoutError:
+					logging.info('Timeout!')
+	except Exception as e:
+		logging.info(f"Disconecting ws client due to error: {e}")
+		manager.disconnect(websocket)

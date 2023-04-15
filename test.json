@@ -1,0 +1,25 @@
+{
+	"type": "action",
+	"data": { }
+}
+
+{
+	"action": "newuser",
+	"args": {
+		"email": "test@test.com",
+		"password": "60f87dee661d1e87afb7b7a6f8e083f9",
+		"rpi_address": "0.0.0.0",
+		"first_name": "test",
+		"last_name": "test",
+		"active": true,
+		"roles": "A"
+	}
+}
+
+{
+	"action": "authuser",
+	"args": {
+		"email": "test@test.com",
+		"password": "60f87dee661d1e87afb7b7a6f8e083f9"
+	}
+}

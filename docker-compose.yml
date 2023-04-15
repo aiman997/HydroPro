@@ -2,7 +2,7 @@ version: '3.9'
 
 services:
   users:
-    build: 
+    build:
       context: ./
       dockerfile: base/Python/Dockerfile
       args:
@@ -23,8 +23,30 @@ services:
       - redis
       - postgres
 
+  auth:
+    build:
+      context: ./
+      dockerfile: base/Python/Dockerfile
+      args:
+        service_dir: "auth"
+    init: true
+    tty: true
+    container_name: auth
+    restart: unless-stopped
+    volumes:
+      - ./auth/bin:/app/bin
+      - ./base/Python/lib:/app/lib
+    environment:
+      PORT: "${METRICS_PORT}"
+      DATABASE: "${DB}"
+      LOG_LEVEL: "${LOG_LEVEL}"
+      REDIS: "${REDIS}"
+    depends_on:
+      - redis
+      - postgres
+
   farmer:
-    build: 
+    build:
       context: ./
       dockerfile: base/Python/Dockerfile
       args:
@@ -44,18 +66,18 @@ services:
       - redis
       - postgres
 
-  bot:
-    build: 
+  rpi:
+    build:
       context: ./
       dockerfile: base/Python/Dockerfile
       args:
-        service_dir: "bot"
+        service_dir: "rpi"
     init: true
     tty: true
     container_name: bot
     restart: unless-stopped
     volumes:
-      - ./bot/bin:/app/bin
+      - ./rpi/bin:/app/bin
       - ./base/Python/lib:/app/lib
     environment:
       DATABASE: "${DB}"
@@ -71,7 +93,7 @@ services:
       - postgres
 
   metrics:
-    build: 
+    build:
       context: ./
       dockerfile: base/Python/Dockerfile
       args:
@@ -110,7 +132,7 @@ services:
       - ./wsapi/main.py:/app/main.py
       - ./wsapi/manger.py:/app/manger.py
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
       interval: 5m
       timeout: 5s
       retries: 3
@@ -131,7 +153,7 @@ services:
     depends_on:
       - wsapi
     environment:
-      PROXY_BACKEND: ${PROXY_BACKEND} 
+      PROXY_BACKEND: ${PROXY_BACKEND}
       PROXY_PORT: ${PROXY_PORT}
 
   frontend:
@@ -164,8 +186,8 @@ services:
     restart: always
     deploy:
       mode: replicated
-      replicas: 1 
-      
+      replicas: 1
+
   prometheus-push-gateway:
     container_name: prometheus-push-gateway
     image: prom/pushgateway

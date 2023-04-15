@@ -1,12 +1,13 @@
-import os
 import asyncio
-import asyncpg
 import logging
+import os
+
+import asyncpg
+import bcrypt
 import redis.asyncio as redis
-from lib.service import Service
 from aioprometheus import Gauge
 from aioprometheus.pusher import Pusher
-import bcrypt
+from lib.service import Service
 
 DB			     = 'postgresql://postgres:NxVhhyU9p3@postgres/hydrodb' # os.environ.get('DB')
 PREFIX            = "HYDRO::USER::"
@@ -20,6 +21,26 @@ class Users(Service):
 			Service.__init__(self, name, stream, streams, actions, redis_conn, metrics_provider)
 			self.newusers_metric = Gauge("newusers", "Users registered")
 			self.rpcs.append('newuser')
+			self.rpcs.append('authuser')
+			self.salt = bcrypt.gensalt()
+
+		@Service.rpc
+		async def authuser(self, event):
+			logging.info(event)
+			try:
+				conn = await asyncpg.connect(dsn=DB)
+				email = event['email']
+				password = event['password']
+				result = await conn.fetchrow("SELECT * FROM users.user WHERE email = $1", email)
+				if bcrypt.checkpw(password.encode('utf-8'), result['password'].encode('utf-8')):
+					logging.info(f"authuser event: {email} authenticated")
+					return {"success": 1, "status": "authorized"}
+				else:
+					logging.info(f"authuser event: {email} not authenticated")
+					return {"success": 0, "status": "not authorized"}
+			except Exception as e:
+				logging.error(f"Error while newuser: {e}")
+				return {"error": 1, "message": e }
 
 		@Service.rpc
 		async def newuser(self, event):
@@ -31,12 +52,12 @@ class Users(Service):
 				rpi_address = event['rpi_address']
 				first_name = event['first_name']
 				last_name = event['last_name']
-				plant_id = event['plant_id']
 				active = event['active']
 				roles = event['roles']
-				hashed_password = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
-				new_user_id = await conn.fetchval(f"INSERT INTO users.user(plant_id, email, password, first_name, last_name, active, roles) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id", plant_id, email, str(hashed_password), first_name, last_name, active, roles)
+				hashed_password = bcrypt.hashpw(password.encode('utf-8'), self.salt).decode('utf-8')
+				new_user_id = await conn.fetchval(f"INSERT INTO users.user(email, password, first_name, last_name, active, roles) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id", email, str(hashed_password), first_name, last_name, active, roles)
 				await conn.close()
+				await self.send_event('authuser', event)
 				return {"success": 1, "user_id": new_user_id}
 			except Exception as e:
 				logging.error(f"Error while newuser: {e}")
@@ -75,10 +96,10 @@ class Users(Service):
 			except Exception as e:
 				logging.error(f"Error: {e}")
 
-			await self.send_event('newuser', event)
+			await self.send_event('_newuser', event)
 
 async def main():
-	svc = Users('users', 'users', ['api'], ['newuser', 'authuser', 'resetuser', 'deluser'], redis.Redis(host='redis', port=6379, decode_responses=False), Pusher("metric", PUSH_GATEWAY_ADDR, grouping_key={"instance": 'metric'}))
+	svc = Users('users', 'users', ['api'], ['newuser', 'authuser', 'resetuser', 'deluser'], redis.Redis(host='redis', port=6379, decode_responses=False), Pusher("metric", PUSH_GATEWAY_ADDR, grouping_key={"instance": 'users'}))
 	loop.create_task(svc.listen())
 
 if __name__ == '__main__':

@@ -1,12 +1,12 @@
-FROM python:alpine3.15
+FROM python:latest
 
 WORKDIR /app
 
 # Install curl for healthchecks
-RUN apk add curl
+RUN apt install curl gcc
 
 # Setup a nonroot user for security
-RUN adduser -D nonroot
+RUN adduser nonroot
 USER nonroot
 
 # Upgrade pip
@@ -18,6 +18,9 @@ RUN pip install --user --no-cache-dir --upgrade -r requirements.txt
 
 # Copy the app
 COPY main.py /app/main.py
+
+# Copy the html
+COPY index.html /app/index.html
 
 # Expose the app's port
 EXPOSE 8000
