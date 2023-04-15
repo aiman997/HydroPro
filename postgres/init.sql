@@ -89,7 +89,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION users.get_user(
-    user_id BIGINT
+    v_email TEXT
 )
 RETURNS TABLE(
     id BIGINT,
@@ -119,7 +119,7 @@ BEGIN
     FROM
     users.user
     WHERE
-    users.user.id = user_id;
+    users.user.email = v_email;
 END;
 $$ LANGUAGE plpgsql;
 
