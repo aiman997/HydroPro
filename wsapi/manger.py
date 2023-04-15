@@ -1,6 +1,6 @@
 import asyncio
-import logging
 import json
+import logging
 import uuid
 from typing import List, Union
 
@@ -11,10 +11,12 @@ MAX_CONNECTIONS = 100
 
 logging.basicConfig(level=logging.DEBUG)
 
+
 class ConnectionManager:
     def __init__(self):
         self.active_connections = {}
-        self.redis = redis.Redis(host='redis', port=6379, decode_responses=True)
+        self.redis = redis.Redis(
+            host='redis', port=6379, decode_responses=True)
         self.pubsub = self.redis.pubsub(ignore_subscribe_messages=True)
 
     async def connect(self, websocket: WebSocket):

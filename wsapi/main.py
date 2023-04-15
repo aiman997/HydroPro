@@ -1,27 +1,20 @@
+import asyncio
 import json
 import logging
-import asyncio
+import os
+from datetime import datetime, timedelta, timezone
+from typing import Optional, Union
+
 import bcrypt
-from datetime import datetime, timezone, timedelta
-from typing import Union, Optional
-from fastapi import (
-    Cookie,
-    Depends,
-    FastAPI,
-    Query,
-    WebSocket,
-    WebSocketException,
-    status,
-    WebSocketDisconnect,
-)
-from fastapi.responses import HTMLResponse
+import jwt
+import redis.asyncio as redis
+from fastapi import (Cookie, Depends, FastAPI, Query, WebSocket,
+                     WebSocketDisconnect, WebSocketException, status)
 from fastapi.middleware import Middleware
 from fastapi.middleware.cors import CORSMiddleware
-from manger import ConnectionManager
-import redis.asyncio as redis
+from fastapi.responses import HTMLResponse
 from lib.event import Event
-import jwt
-import os
+from manger import ConnectionManager
 
 SECRET_KEY = "mysecretkey"
 
@@ -60,6 +53,7 @@ def validate_json_request(json_request):
     except Exception as e:
         logging.error(f"Invalid request with error: {e}")
         return False
+
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
