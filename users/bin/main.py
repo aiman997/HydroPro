@@ -55,13 +55,13 @@ class Users(Service):
 				active = event['active']
 				roles = event['roles']
 				hashed_password = bcrypt.hashpw(password.encode('utf-8'), self.salt).decode('utf-8')
-				new_user_id = await conn.fetchval(f"INSERT INTO users.user(email, password, first_name, last_name, active, roles) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id", email, str(hashed_password), first_name, last_name, active, roles)
+				new_user_id = await conn.fetchval(f"SELECT * FROM users.insert_user($1::TEXT, $2::TEXT, $3::TEXT, $4::TEXT, $5::BOOLEAN, $6::VARCHAR);", email, str(hashed_password), first_name, last_name, active, roles)
 				await conn.close()
 				await self.send_event('authuser', event)
 				return {"success": 1, "user_id": new_user_id}
 			except Exception as e:
 				logging.error(f"Error while newuser: {e}")
-				return {"error": e}
+				return {"error": 1, "message": f"Exception occuried: {e}"}
 
 
 		async def handel_event(self, event):

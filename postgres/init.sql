@@ -25,7 +25,7 @@ CREATE TABLE users.user(
     last_name TEXT NOT NULL,
     active BOOLEAN,
     roles VARCHAR,
-    confirmed_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    confirmed_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -42,13 +42,16 @@ CREATE OR REPLACE FUNCTION users.insert_user(
     first_name TEXT,
     last_name TEXT,
     active BOOLEAN,
-    confirmed_at TIMESTAMPTZ,
     roles VARCHAR
 )
 RETURNS BIGINT AS $$
+  DECLARE r_id BIGINT;
 BEGIN
-    INSERT INTO users.user( email, password, first_name, last_name, active, confirmed_at, roles)
-    VALUES (email, password, first_name, last_name, active, confirmed_at, roles) RETURNING id;
+    INSERT INTO users.user( email, password, first_name, last_name, active, roles)
+    VALUES (email, password, first_name, last_name, active, roles)
+ RETURNING id INTO r_id;
+
+    RETURN r_id;
 END;
 $$ LANGUAGE plpgsql;
 
