@@ -168,7 +168,7 @@ LANGUAGE plpgsql
 AS $$
 BEGIN
     INSERT INTO plants.plant (raspberry_pi_id, name)
-    VALUES (p_raspberry_pi_id, p_name);
+    VALUES (p_raspberry_pi_id, p_name) RETURNING id;
 END;
 $$;
 
