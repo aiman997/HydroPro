@@ -7,7 +7,7 @@ from aioprometheus import Gauge
 from aioprometheus.pusher import Pusher
 from lib.service import Service
 
-DB			     = 'postgresql://postgres:NxVhhyU9p3@postgres/hydrodb' # os.environ.get('DB')
+DB							  = 'postgresql://postgres:NxVhhyU9p3@postgres/hydrodb' # os.environ.get('DB')
 PREFIX            = "HYDRO::AUTH::"
 PUSH_GATEWAY_ADDR = os.environ.get('PUSH_GATEWAY_ADDR')
 
