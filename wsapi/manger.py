@@ -11,7 +11,6 @@ MAX_CONNECTIONS = 100
 
 logging.basicConfig(level=logging.DEBUG)
 
-
 class ConnectionManager:
     def __init__(self):
         self.active_connections = {}

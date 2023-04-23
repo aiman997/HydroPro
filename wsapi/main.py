@@ -96,24 +96,20 @@ async def send_event(stream, action, data={}):
 
 # Routes
 
-
 @app.get("/")
 async def get():
     with open(os.path.join(root, 'index.html')) as fh:
         html = fh.read()
     return HTMLResponse(html)
 
-
 @app.get("/health")
 async def get():
     return "OK"
-
 
 @app.post("/auth")
 async def auth():
     token = create_access_token(dict())
     return token
-
 
 @app.post("/auth")
 async def authenticate_user(email: str, password: str):
@@ -124,7 +120,6 @@ async def authenticate_user(email: str, password: str):
     # Generate access token
     token = create_access_token({"email": email})
     return {"access_token": token}
-
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket, q: Union[int, None] = None, cookie_or_token: str = Depends(get_cookie_or_token)):
