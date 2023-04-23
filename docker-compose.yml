@@ -23,6 +23,27 @@ services:
       - redis
       - postgres
 
+  plant:
+    build:
+      context: ./
+      dockerfile: base/Python/Dockerfile
+      args:
+        service_dir: "plant"
+    init: true
+    tty: true
+    container_name: plant
+    restart: unless-stopped
+    volumes:
+      - ./plant/bin:/app/bin
+      - ./base/Python/lib:/app/lib
+    environment:
+      PORT: "${METRICS_PORT}"
+      DATABASE: "${DB}"
+      LOG_LEVEL: "${LOG_LEVEL}"
+      REDIS: "${REDIS}"
+    depends_on:
+      - redis
+      - postgres
   auth:
     build:
       context: ./
