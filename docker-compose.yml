@@ -246,8 +246,8 @@ services:
     restart: always
     image: postgres:alpine
     volumes:
-      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
-      - ./postgres/data:/var/lib/postgresql/data
+      - ./hydrodb/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./hydrodb/data:/var/lib/postgresql/data
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
