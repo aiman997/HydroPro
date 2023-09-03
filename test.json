@@ -26,3 +26,11 @@
 		"password": "60f87dee661d1e87afb7b7a6f8e083f9"
 	}
 }
+
+{
+	"action": "newplant",
+	"args": {
+		"rpi_id": "1",
+		"plant": "rocket"
+	}
+}
