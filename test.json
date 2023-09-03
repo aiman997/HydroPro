@@ -1,6 +1,9 @@
 {
 	"type": "action",
-	"data": { }
+	"data": { 
+		"action": "read",
+		"args": {}
+	}
 }
 
 {

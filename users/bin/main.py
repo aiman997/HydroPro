@@ -9,10 +9,9 @@ from aioprometheus import Gauge
 from aioprometheus.pusher import Pusher
 from lib.service import Service
 
-DB			     = 'postgresql://postgres:NxVhhyU9p3@postgres/hydrodb' # os.environ.get('DB')
+DB			     = os.environ.get('DB')
 PREFIX            = "HYDRO::USER::"
 PUSH_GATEWAY_ADDR = os.environ.get('PUSH_GATEWAY_ADDR')
-PUSH_GATEWAY_ADDR = "http://prometheus-push-gateway:9091"
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -21,26 +20,6 @@ class Users(Service):
 			Service.__init__(self, name, stream, streams, actions, redis_conn, metrics_provider)
 			self.newusers_metric = Gauge("newusers", "Users registered")
 			self.rpcs.append('newuser')
-			self.rpcs.append('authuser')
-			self.salt = bcrypt.gensalt()
-
-		@Service.rpc
-		async def authuser(self, event):
-			logging.info(event)
-			try:
-				conn = await asyncpg.connect(dsn=DB)
-				email = event['email']
-				password = event['password']
-				result = await conn.fetchrow("SELECT * FROM users.user WHERE email = $1", email)
-				if bcrypt.checkpw(password.encode('utf-8'), result['password'].encode('utf-8')):
-					logging.info(f"authuser event: {email} authenticated")
-					return {"success": 1, "status": "authorized"}
-				else:
-					logging.info(f"authuser event: {email} not authenticated")
-					return {"success": 0, "status": "not authorized"}
-			except Exception as e:
-				logging.error(f"Error while newuser: {e}")
-				return {"error": 1, "message": e }
 
 		@Service.rpc
 		async def newuser(self, event):
@@ -64,7 +43,7 @@ class Users(Service):
 				return {"error": 1, "message": f"Exception occuried: {e}"}
 
 
-		async def handel_event(self, event):
+		async def handle_event(self, event):
 			logging.info(event)
 
 			try:

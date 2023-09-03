@@ -11,7 +11,7 @@ PUSH_GATEWAY_ADDR = "http://prometheus-push-gateway:9091"
 
 logging.basicConfig(level=logging.INFO)
 
-class Hydro(Service):
+class Farmer(Service):
 		def __init__(self, name, stream, streams, actions, redis_conn, metrics_provider, params):
 			Service.__init__(self, name, stream, streams, actions, redis_conn, metrics_provider)
 			self.params = params
@@ -74,12 +74,12 @@ class Hydro(Service):
 async def main():
 	with open('/app/param.json') as json_file:
 		param = json.load(json_file)
-		svc = Hydro('hydro', 'controls', ['readings', 'api'], ['update', 'ping'], redis.Redis(host='redis', port=6379, decode_responses=False), Pusher("hydro", PUSH_GATEWAY_ADDR, grouping_key={"instance": 'hydro'}), param['Cucumber']["Stage1"])
+		svc = Farmer('farmer', 'farmer', ['rpi'], ['ping', 'update', 'read', 'add', 'remove'], redis.Redis(host='redis', port=6379, decode_responses=False), Pusher("hydro", PUSH_GATEWAY_ADDR, grouping_key={"instance": 'hydro'}), param['Cucumber']["Stage1"])
 		loop.create_task(svc.listen())
 
 if __name__ == '__main__':
-  loop = asyncio.new_event_loop()
-  asyncio.set_event_loop(loop)
-  logging.info(f"Starting...")
-  loop.create_task(main())
-  loop.run_forever()
+	loop = asyncio.new_event_loop()
+	asyncio.set_event_loop(loop)
+	logging.info(f"Starting...")
+	loop.run_until_complete(main())
+	loop.run_forever()

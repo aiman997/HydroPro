@@ -11,3 +11,6 @@ instance/
 
 */__pypackages__/
 postgres/data/
+*.DS_Store
+*.vscode/
+*.env
