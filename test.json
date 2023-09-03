@@ -28,6 +28,6 @@
 	"action": "newplant",
 	"args": {
 		"rpi_id": "1",
-		"plant": "cannabis"
+		"plant": "rocket"
 	}
 }
