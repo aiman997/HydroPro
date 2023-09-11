@@ -1,0 +1,30 @@
+
+.wishlist-container {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+}
+
+.wishlist-link {
+    text-align: center !important;
+    display: inline-block !important;
+}
+
+.qty {
+    margin-bottom: 1px !important;
+}
+
+.icon-container {
+    margin-bottom: -6px !important;
+    margin-left: -6px;
+}
+
+.wishlist-text-container {
+    text-align: center !important; /* Adding text center to ensure the text aligns center */
+}
+
+.wishlist-text {
+    color: white;
+    font-size: 12px;
+}
+
