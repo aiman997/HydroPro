@@ -185,8 +185,7 @@ services:
       - 8001:8001
     stdin_open: true
     volumes:
-      - ./frontend:/usr/src/app
-      - /usr/src/app/node_modules
+      - ./frontend:/code
     restart: always
     depends_on:
       - wsapi
