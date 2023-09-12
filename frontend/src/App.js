@@ -1,15 +1,13 @@
 import "./App.css";
-import Footer from "./Components/Footer";
-import MainContent from "./Components/MainContent";
-import TopHeader from "./Components/Top-Header";
-import Header from "./Components/Header";
+import Footer from "./Components/Footer/Footer";
+import TopHeader from "./Components/TopHeader/Top-Header";
+import Header from "./Components/Header/Header";
 
 function App() {
   return (
     <div className="App">
       <TopHeader/>
       <Header/>
-      <MainContent />
       <Footer />
     </div>
   );
