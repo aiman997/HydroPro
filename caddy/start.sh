@@ -2,10 +2,10 @@
 
 set -e
 
+export DOMAIN="mahrous-amer.com"
+
 if [ -z "$DOMAIN" ]
 then
-    # If DOMAIN is blank, set to localhost
-    # Note: in prod, domain will be the actual domain
     export DOMAIN="localhost"
 fi
 
