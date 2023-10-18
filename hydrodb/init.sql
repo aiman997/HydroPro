@@ -15,46 +15,6 @@ SET timezone = +8;
 
 -- Users Microservice
 
-CREATE SCHEMA users;
-
-CREATE TABLE users.user(
-    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    email TEXT UNIQUE NOT NULL,
-    password TEXT NOT NULL,
-    first_name TEXT NOT NULL,
-    last_name TEXT NOT NULL,
-    active BOOLEAN,
-    roles VARCHAR,
-    confirmed_at TIMESTAMPTZ,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE users.role(
-    id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    name TEXT UNIQUE,
-    description TEXT
-);
-
-CREATE OR REPLACE FUNCTION users.insert_user(
-    email TEXT,
-    password TEXT,
-    first_name TEXT,
-    last_name TEXT,
-    active BOOLEAN,
-    roles VARCHAR
-)
-RETURNS BIGINT AS $$
-  DECLARE r_id BIGINT;
-BEGIN
-    INSERT INTO users.user( email, password, first_name, last_name, active, roles)
-    VALUES (email, password, first_name, last_name, active, roles)
- RETURNING id INTO r_id;
-
-    RETURN r_id;
-END;
-$$ LANGUAGE plpgsql;
-
 CREATE OR REPLACE FUNCTION users.update_user(
     user_id BIGINT,
     email TEXT,

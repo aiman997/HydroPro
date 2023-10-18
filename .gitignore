@@ -1,14 +1,10 @@
-# Byte-compiled / optimized / DLL files
 */__pycache__/
 *.py[cod]
 *$py.class
 *.python-version
 data/
-
-# Flask stuff:
 instance/
 .webassets-cache
-
 */__pypackages__/
 postgres/data/
 *.DS_Store

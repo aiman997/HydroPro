@@ -33,6 +33,7 @@ class Auth(Service):
 				logging.info(f"authuser sql result: {result}")
 				if bcrypt.checkpw(password.encode('utf-8'), result['password'].encode('utf-8')):
 					logging.info(f"authuser event: {email} authenticated")
+					await self.redis.set('auth', email)
 					await self.send_event('authenticated', {"email": email, "untill": '', "token": '', "refresh_token": ''})
 					return {"success": 1, "status": "authorized"}
 				else:
@@ -44,23 +45,20 @@ class Auth(Service):
 
 		async def handle_event(self, event):
 			logging.info(event)
-
 			try:
 				if 'authuser' in event.keys():
 					logging.info(f"resetuser event: password for {event} reset")
-
 				elif 'deluser' in event.keys():
 					email = event['deluser']['email']
 					logging.info(f"deluser event: {email} deleted from the database")
 					await self.send_event('unauthenticated', event)
 				else:
 					logging.error(f"Error: Invalid event")
-
 			except Exception as e:
 				logging.error(f"Error: {e}")
 
 async def main():
-	svc = Auth('auth', 'auth', ['api', 'users'], ['newuser', 'authuser', 'resetuser', 'deluser'], redis.Redis(host='redis', port=6379, decode_responses=False), Pusher("metric", PUSH_GATEWAY_ADDR, grouping_key={"instance": 'auth'}))
+	svc = Auth('auth', ['api'], ['newuser', 'authuser', 'resetuser', 'deluser'], redis.Redis(host='redis', port=6379, decode_responses=False), Pusher("metric", PUSH_GATEWAY_ADDR, grouping_key={"instance": 'auth'}))
 	loop.create_task(svc.listen())
 
 if __name__ == '__main__':

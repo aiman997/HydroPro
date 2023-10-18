@@ -9,8 +9,8 @@ from aioprometheus import Gauge
 from aioprometheus.pusher import Pusher
 from lib.service import Service
 
-DB			     = os.environ.get('DB')
-PREFIX            = "HYDRO::USER::"
+DB = os.environ.get('DB')
+PREFIX = "HYDRO::USER::"
 PUSH_GATEWAY_ADDR = os.environ.get('PUSH_GATEWAY_ADDR')
 
 logging.basicConfig(level=logging.DEBUG)
@@ -28,14 +28,14 @@ class Users(Service):
 				conn = await asyncpg.connect(dsn=DB)
 				email = event['email']
 				password = event['password']
-				rpi_address = event['rpi_address']
 				first_name = event['first_name']
 				last_name = event['last_name']
-				active = event['active']
+				active = 0
 				roles = event['roles']
 				hashed_password = bcrypt.hashpw(password.encode('utf-8'), self.salt).decode('utf-8')
 				new_user_id = await conn.fetchval(f"SELECT * FROM users.insert_user($1::TEXT, $2::TEXT, $3::TEXT, $4::TEXT, $5::BOOLEAN, $6::VARCHAR);", email, str(hashed_password), first_name, last_name, active, roles)
 				await conn.close()
+				self.newusers_metric.inc({"type": "new_user"})
 				await self.send_event('authuser', event)
 				return {"success": 1, "user_id": new_user_id}
 			except Exception as e:

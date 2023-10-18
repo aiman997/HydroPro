@@ -42,14 +42,18 @@ class Event:
     async def receive_message(self, channel_name, redis_conn):
         pubsub = redis_conn.pubsub(ignore_subscribe_messages=True)
         await pubsub.subscribe(channel_name)
+        msg = Event()
         try:
             while True:
                 message = await pubsub.get_message()
                 if message and message["type"] == "message":
+                    msg.data = message["data"]
                     await redis_conn.delete(channel_name)
-                    return message["data"]
+                    return msg
+                else:
+                    continue
         except Exception as e:
             logging.error(f"Error receiving message: {e}")
-            return None
+            return msg
         finally:
             await pubsub.unsubscribe(channel_name)

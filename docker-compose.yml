@@ -1,6 +1,29 @@
 version: '3.9'
 
 services:
+  crtapi:
+    build:
+      context: ./crtapi
+      dockerfile: Dockerfile
+    init: true
+    tty: true
+    container_name: crtapi
+    restart: unless-stopped
+    volumes:
+      - ./crtapi:/app
+    ports:
+      - 8003:8003
+    environment:
+      PUSH_GATEWAY_ADDR: "${PUSH_GATEWAY_ADDR}"
+      PORT: "${METRICS_PORT}"
+      LOG_LEVEL: "${LOG_LEVEL}"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8003/health" ]
+      interval: 5m
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
   users:
     build:
       context: ./
@@ -15,6 +38,7 @@ services:
       - ./users/bin:/app/bin
       - ./base/Python/lib:/app/lib
     environment:
+      PUSH_GATEWAY_ADDR: "${PUSH_GATEWAY_ADDR}"
       PORT: "${METRICS_PORT}"
       DATABASE: "${DB}"
       LOG_LEVEL: "${LOG_LEVEL}"
@@ -37,6 +61,7 @@ services:
       - ./plant/bin:/app/bin
       - ./base/Python/lib:/app/lib
     environment:
+      PUSH_GATEWAY_ADDR: "${PUSH_GATEWAY_ADDR}"
       PORT: "${METRICS_PORT}"
       DATABASE: "${DB}"
       LOG_LEVEL: "${LOG_LEVEL}"
@@ -44,6 +69,7 @@ services:
     depends_on:
       - redis
       - postgres
+
   auth:
     build:
       context: ./
@@ -58,6 +84,7 @@ services:
       - ./auth/bin:/app/bin
       - ./base/Python/lib:/app/lib
     environment:
+      PUSH_GATEWAY_ADDR: "${PUSH_GATEWAY_ADDR}"
       PORT: "${METRICS_PORT}"
       DATABASE: "${DB}"
       LOG_LEVEL: "${LOG_LEVEL}"
@@ -80,6 +107,8 @@ services:
       - ./farmer/bin:/app/bin
       - ./base/Python/lib:/app/lib
     environment:
+      PUSH_GATEWAY_ADDR: "${PUSH_GATEWAY_ADDR}"
+      PORT: "${METRICS_PORT}"
       DATABASE: "${DB}"
       LOG_LEVEL: "${LOG_LEVEL}"
       REDIS: "${REDIS}"
@@ -101,14 +130,11 @@ services:
       - ./rpi/bin:/app/bin
       - ./base/Python/lib:/app/lib
     environment:
+      PUSH_GATEWAY_ADDR: "${PUSH_GATEWAY_ADDR}"
+      PORT: "${METRICS_PORT}"
       DATABASE: "${DB}"
       LOG_LEVEL: "${LOG_LEVEL}"
       REDIS: "${REDIS}"
-      RPI_IP: ${RPI_IP}
-      RPI_PORT: ${RPI_PORT}
-      PUSH_GATEWAY_ADDR: "${PUSH_GATEWAY_ADDR}"
-      READING_DURATION: "${READING_DURATION}"
-      SLEEP_DURATION: "${SLEEP_DURATION}"
     depends_on:
       - redis
       - postgres
@@ -127,6 +153,7 @@ services:
       - ./metrics/bin:/app/bin
       - ./base/Python/lib:/app/lib
     environment:
+      PUSH_GATEWAY_ADDR: "${PUSH_GATEWAY_ADDR}"
       PORT: "${METRICS_PORT}"
       DATABASE: "${DB}"
       LOG_LEVEL: "${LOG_LEVEL}"
@@ -134,48 +161,35 @@ services:
     depends_on:
       - redis
       - postgres
-
-  wsapi:
-    container_name: wsapi
-    restart: unless-stopped
+ 
+  api:
     build:
-      context: ./wsapi
-      dockerfile: ./Dockerfile
+      context: ./api
+      dockerfile: Dockerfile
+    init: true
+    tty: true
+    container_name: api
+    restart: unless-stopped
+    volumes:
+      - ./api/app:/app
+      - ./base/Python/lib:/app/lib
     ports:
       - 8000:8000
     environment:
+      PUSH_GATEWAY_ADDR: "${PUSH_GATEWAY_ADDR}"
+      PORT: "${METRICS_PORT}"
+      DATABASE: "${DB}"
       LOG_LEVEL: "${LOG_LEVEL}"
       REDIS: "${REDIS}"
     depends_on:
       - redis
-    volumes:
-      - ./base/Python/lib:/app/lib
-      - ./wsapi/main.py:/app/main.py
-      - ./wsapi/manger.py:/app/manger.py
+      - postgres
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
       interval: 5m
       timeout: 5s
       retries: 3
       start_period: 15s
-
-  caddy:
-    container_name: caddy
-    restart: unless-stopped
-    build:
-      context: ./caddy
-      dockerfile: ./Dockerfile
-    ports:
-      - 80:80
-      - 443:443
-    volumes:
-      - ./data/caddy_data:/data
-      - ./data/caddy_config:/config
-    depends_on:
-      - wsapi
-    environment:
-      PROXY_BACKEND: ${PROXY_BACKEND}
-      PROXY_PORT: ${PROXY_PORT}
 
   frontend:
     container_name: frontend
@@ -189,7 +203,26 @@ services:
       - /usr/src/app/node_modules
     restart: always
     depends_on:
-      - wsapi
+      - api
+
+# Support services
+  caddy:
+    container_name: caddy
+    restart: unless-stopped
+    build:
+      context: ./caddy
+      dockerfile: ./Dockerfile
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./data/caddy_data:/data
+      - ./data/caddy_config:/config
+    depends_on:
+      - api
+    environment:
+      PROXY_BACKEND: ${PROXY_BACKEND}
+      PROXY_PORT: ${PROXY_PORT}
 
   nginx:
     container_name: nginx
@@ -211,6 +244,19 @@ services:
       mode: replicated
       replicas: 1
 
+  postgres:
+    container_name: postgres
+    restart: always
+    image: postgres:alpine
+    volumes:
+      - ./hydrodb/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./hydrodb/data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+
   prometheus-push-gateway:
     container_name: prometheus-push-gateway
     image: prom/pushgateway
@@ -229,46 +275,33 @@ services:
       - ./prometheus:/etc/prometheus
       - prom_data:/prometheus
 
-  grafana:
-    image: grafana/grafana
-    container_name: grafana
-    ports:
-      - 3000:3000
-    restart: unless-stopped
-    environment:
-      - GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER}
-      - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
-    volumes:
-      - ./grafana:/etc/grafana/provisioning/datasources
+  # grafana:
+  #   image: grafana/grafana
+  #   container_name: grafana
+  #   ports:
+  #     - 3000:3000
+  #   restart: unless-stopped
+  #   environment:
+  #     - GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER}
+  #     - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
+  #   volumes:
+  #     - ./grafana:/etc/grafana/provisioning/datasources
 
-  postgres:
-    container_name: postgres
-    restart: always
-    image: postgres:alpine
-    volumes:
-      - ./hydrodb/init.sql:/docker-entrypoint-initdb.d/init.sql
-      - ./hydrodb/data:/var/lib/postgresql/data
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    ports:
-      - "5432:5432"
-
-  pgadmin:
-    container_name: pgadmin
-    image: dpage/pgadmin4:latest
-    environment:
-      - PGADMIN_DEFAULT_EMAIL=hydro@pgadmin.com
-      - PGADMIN_DEFAULT_PASSWORD=NxVhhyU9p3
-      - POSTGRES_USER=postgres
-      - POSTGRES_PW=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
-      - PGADMIN_MAIL=${PGADMIN_MAIL}
-      - PGADMIN_PW=${PGADMIN_PW}
-      - PGADMIN_LISTEN_PORT=5050
-    ports:
-      - "5050:5050"
-    restart: always
+  # pgadmin:
+  #   container_name: pgadmin
+  #   image: dpage/pgadmin4:latest
+  #   environment:
+  #     - PGADMIN_DEFAULT_EMAIL=hydro@pgadmin.com
+  #     - PGADMIN_DEFAULT_PASSWORD=NxVhhyU9p3
+  #     - POSTGRES_USER=postgres
+  #     - POSTGRES_PW=${POSTGRES_PASSWORD}
+  #     - POSTGRES_DB=${POSTGRES_DB}
+  #     - PGADMIN_MAIL=${PGADMIN_MAIL}
+  #     - PGADMIN_PW=${PGADMIN_PW}
+  #     - PGADMIN_LISTEN_PORT=5050
+  #   ports:
+  #     - "5050:5050"
+  #   restart: always
 
 volumes:
   prom_data:
