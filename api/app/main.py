@@ -7,13 +7,14 @@ import redis.asyncio as redis
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from api import admin, auth, user, websocket
 
 PUSH_GATEWAY_ADDR = os.environ.get("PUSH_GATEWAY_ADDR")
 
-root = os.path.dirname(os.path.abspath(__file__)) 
-app = FastAPI()
+root = os.path.dirname(os.path.abspath(__file__))
+app  = FastAPI()
 app.add_middleware(
 	CORSMiddleware,
 	allow_origins = ["*"],
@@ -23,9 +24,8 @@ app.add_middleware(
 )
 app.include_router(user.router)
 app.include_router(websocket.router)
-
+Instrumentator().instrument(app).expose(app)
 redis_conn = redis.Redis(host="redis", port=6379, decode_responses=False)
-# pusher = Pusher("metric", PUSH_GATEWAY_ADDR, grouping_key={"instance": "api"})
 
 
 @app.middleware("http")
