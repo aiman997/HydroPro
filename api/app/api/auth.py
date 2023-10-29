@@ -16,9 +16,9 @@ from pydantic import BaseModel
 from lib.event import Event
 
 # PUSH_GATEWAY_ADDR = os.environ.get("PUSH_GATEWAY_ADDR")
+# pusher = Pusher("metric", PUSH_GATEWAY_ADDR, grouping_key={"instance": "api"})
 
 redis_conn = redis.Redis(host="redis", port=6379, decode_responses=False)
-# pusher = Pusher("metric", PUSH_GATEWAY_ADDR, grouping_key={"instance": "api"})
 router = APIRouter()
 
 @router.post("/auth")

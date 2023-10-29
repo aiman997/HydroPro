@@ -1,4 +1,4 @@
--- Verify userdb:user_table on pg
+-- Verify userdb:update_user on pg
 
 BEGIN;
 

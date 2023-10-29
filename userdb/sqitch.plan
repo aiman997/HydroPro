@@ -5,3 +5,4 @@
 user_schema 2023-10-18T09:46:23Z sqitch <sqitch@ad77f4504fcc> # Add schema for all Users.
 user_table [user_schema] 2023-10-18T09:47:46Z sqitch <sqitch@b2aa5e675678> # Add tables for all Users.
 create_user [user_table] 2023-10-18T09:52:24Z sqitch <sqitch@65a82c9cdbe3> # Add function to insert Users.
+update_user [user_table] 2023-10-29T07:00:40Z sqitch <sqitch@2ae989f97684> # Add function to update users.

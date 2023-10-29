@@ -31,7 +31,7 @@ redis_conn = redis.Redis(host="redis", port=6379, decode_responses=False)
 @app.middleware("http")
 async def log_transaction_filter(request: Request, call_next):
 	start_time = datetime.now()
-	method_name= request.method
+	method_name = request.method
 	qp_map = request.query_params
 	pp_map = request.path_params
 	with open("request_log.txt", mode="a") as reqfile:

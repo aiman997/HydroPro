@@ -14,8 +14,8 @@ PUSH_GATEWAY_ADDR = os.environ.get('PUSH_GATEWAY_ADDR')
 logging.basicConfig(level=logging.DEBUG)
 
 class Plant(Service):
-		def __init__(self, name, stream, streams, actions, redis_conn, metrics_provider):
-			Service.__init__(self, name, stream, streams, actions, redis_conn, metrics_provider)
+		def __init__(self, name,  streams, actions, redis_conn, metrics_provider):
+			Service.__init__(self, name, streams, actions, redis_conn, metrics_provider)
 			self.plant_metric = Gauge("createplant", "New plant added")
 			self.rpcs.append('newplant')
 
@@ -40,7 +40,7 @@ class Plant(Service):
 
 
 async def main():
-	svc = Plant('plant', 'plant', ['api'], ['newplant'], redis.Redis(host='redis', port=6379, decode_responses=False), Pusher("metric", PUSH_GATEWAY_ADDR, grouping_key={"instance": 'plant'}))
+	svc = Plant('plant', ['api'], ['newplant'], redis.Redis(host='redis', port=6379, decode_responses=False), Pusher("metric", PUSH_GATEWAY_ADDR, grouping_key={"instance": 'plant'}))
 	loop.create_task(svc.listen())
 
 if __name__ == '__main__':

@@ -13,7 +13,7 @@ help:
 sqitch: ## Sqitch container to executing a $cmd on a $db. e.g. `make sqitch db=demo cmd=status`
 	test -n "${cmd}"
 	test -n "${db}"
-	docker run --rm --network hydropro_default -v ${ROOT_DIR}:/repo -w /repo/${db} sqitch/sqitch ${cmd}
+	docker run --rm --network hydro_network -v ${ROOT_DIR}:/repo -w /repo/${db} sqitch/sqitch ${cmd}
 	# docker run --rm --network ${PROJECT}_default -v ${ROOT_DIR}:/repo -u $(id -u):$(id -g) -v /etc/passwd:/etc/passwd:ro -w /repo/${db} sqitch/sqitch ${cmd}
 
 sqitch-init: ## Sqitch initialize a support postgresql database. e.g. `make sqitch-init db=demo password=password

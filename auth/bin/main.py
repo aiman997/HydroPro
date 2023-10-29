@@ -16,8 +16,8 @@ PUSH_GATEWAY_ADDR = os.environ.get('PUSH_GATEWAY_ADDR')
 logging.basicConfig(level=logging.DEBUG)
 
 class Auth(Service):
-		def __init__(self, name, stream, streams, actions, redis_conn, metrics_provider):
-			Service.__init__(self, name, stream, streams, actions, redis_conn, metrics_provider)
+		def __init__(self, name, streams, actions, redis_conn, metrics_provider):
+			Service.__init__(self, name, streams, actions, redis_conn, metrics_provider)
 			self.authusers_metric = Gauge("authusers", "Users authenticated")
 			self.rpcs.append('authuser')
 			self.salt = bcrypt.gensalt()
@@ -58,7 +58,13 @@ class Auth(Service):
 				logging.error(f"Error: {e}")
 
 async def main():
-	svc = Auth('auth', ['api'], ['newuser', 'authuser', 'resetuser', 'deluser'], redis.Redis(host='redis', port=6379, decode_responses=False), Pusher("metric", PUSH_GATEWAY_ADDR, grouping_key={"instance": 'auth'}))
+	svc = Auth(
+		'auth',
+		['api'],
+		['newuser', 'authuser', 'resetuser', 'deluser'],
+		redis.Redis(host='redis', port=6379, decode_responses=False),
+		Pusher("metric", PUSH_GATEWAY_ADDR, grouping_key={"instance": 'auth'})
+	)
 	loop.create_task(svc.listen())
 
 if __name__ == '__main__':

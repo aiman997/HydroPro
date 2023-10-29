@@ -1,4 +1,4 @@
--- Revert userdb:create_user from pg
+-- Revert userdb:update_user from pg
 
 BEGIN;
 

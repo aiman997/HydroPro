@@ -16,8 +16,8 @@ PUSH_GATEWAY_ADDR = os.environ.get('PUSH_GATEWAY_ADDR')
 logging.basicConfig(level=logging.DEBUG)
 
 class Users(Service):
-		def __init__(self, name, stream, streams, actions, redis_conn, metrics_provider):
-			Service.__init__(self, name, stream, streams, actions, redis_conn, metrics_provider)
+		def __init__(self, name, streams, actions, redis_conn, metrics_provider):
+			Service.__init__(self, name, streams, actions, redis_conn, metrics_provider)
 			self.newusers_metric = Gauge("newusers", "Users registered")
 			self.rpcs.append('newuser')
 
@@ -78,7 +78,7 @@ class Users(Service):
 			await self.send_event('_newuser', event)
 
 async def main():
-	svc = Users('users', 'users', ['api'], ['newuser', 'authuser', 'resetuser', 'deluser'], redis.Redis(host='redis', port=6379, decode_responses=False), Pusher("metric", PUSH_GATEWAY_ADDR, grouping_key={"instance": 'users'}))
+	svc = Users('users', ['api'], ['newuser', 'authuser', 'resetuser', 'deluser'], redis.Redis(host='redis', port=6379, decode_responses=False), Pusher("metric", PUSH_GATEWAY_ADDR, grouping_key={"instance": 'users'}))
 	loop.create_task(svc.listen())
 
 if __name__ == '__main__':

@@ -14,8 +14,8 @@ PUSH_GATEWAY_ADDR = os.environ.get('PUSH_GATEWAY_ADDR')
 logging.basicConfig(level=logging.INFO)
 
 class RPI(Service):
-    def __init__(self, name, stream, streams, actions, redis_conn, metrics_provider):
-        Service.__init__(self, name, stream, streams, actions, redis_conn, metrics_provider)
+    def __init__(self, name, streams, actions, redis_conn, metrics_provider):
+        Service.__init__(self, name, streams, actions, redis_conn, metrics_provider)
         self.rpcs.append('read')
 
     @Service.rpc
@@ -38,7 +38,7 @@ class RPI(Service):
         logging.info(f"Event handled successfully")
 
 async def main():
-    svc = RPI('rpi', 'rpi', ['api'], ['ping', 'update', 'read', 'add', 'remove'], redis.Redis(host='redis', port=6379, decode_responses=False), Pusher("rpi", PUSH_GATEWAY_ADDR, grouping_key={"instance": 'rpi'}))
+    svc = RPI('rpi', ['api'], ['ping', 'update', 'read', 'add', 'remove'], redis.Redis(host='redis', port=6379, decode_responses=False), Pusher("rpi", PUSH_GATEWAY_ADDR, grouping_key={"instance": 'rpi'}))
     loop.create_task(svc.listen())
 
 if __name__ == '__main__':
