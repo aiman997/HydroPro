@@ -1,16 +1,20 @@
 import "./App.css";
-import Footer from "./Components/Footer/Footer";
-import TopHeader from "./Components/TopHeader/Top-Header";
-import Header from "./Components/Header/Header";
+// import Footer from "./Components/Footer/Footer";
+// import Header from "./Components/Header/Header";
+import Home from "./Pages/Home";
 
 function App() {
   return (
-    <div className="App">
-      <TopHeader/>
-      <Header/>
-      <Footer />
+    // 
+    <div>
+      <Home/>
     </div>
   );
 }
 
 export default App;
+
+
+// <TopHeader/>
+// <Header/>
+// <Footer />
