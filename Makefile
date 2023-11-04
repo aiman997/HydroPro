@@ -27,5 +27,11 @@ endif
 
 psql: ## psql container to run queries in $db e.g make psql db=demo
 	test -n "${db}"
-	docker run -it --rm --network hydropro_default bitnami/postgresql:15 psql -h postgres -U postgres -d ${db}
+	docker run -it --rm --network hydro_network bitnami/postgresql:15 psql -h postgres -U postgres -d ${db}
 	# docker run -it --rm --network ${PROJECT}_default bitnami/postgresql:15 psql -h postgres -U postgres -d ${db}
+
+build: ## Bring up continers and rebuild modified continers
+	docker-compose --env-file docker-compose.env up --build  -d
+
+stop: ## Stop continers
+	docker-compose --env-file docker-compose.env stop 

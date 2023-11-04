@@ -8,21 +8,20 @@ import logging
 import asyncio
 import bcrypt
 import redis.asyncio as redis
-# from aioprometheus.pusher import Pusher
 from fastapi import APIRouter, BackgroundTasks, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from lib.event import Event
+from utils import *
 
-# PUSH_GATEWAY_ADDR = os.environ.get("PUSH_GATEWAY_ADDR")
 
 redis_conn = redis.Redis(host="redis", port=6379, decode_responses=False)
-# pusher = Pusher("metric", PUSH_GATEWAY_ADDR, grouping_key={"instance": "api"})
 router = APIRouter()
 
 
 class Signup(BaseModel):
+    username: str
     email: str
     password: str
     firstname: str
@@ -32,17 +31,17 @@ class Signup(BaseModel):
 
 
 class User(BaseModel):
-    id: UUID
     email: str
     password: str
 
 
 @router.post("/users/newbie")
 async def create_user(
-    email: str, password: str, first_name: str, last_name: str, roles: str
+    username: str, email: str, password: str, first_name: str, last_name: str, roles: str
 ):
     hashed_password = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
     data = {
+        "username": email,
         "email": email,
         "password": hashed_password,
         "first_name": first_name,
@@ -54,12 +53,13 @@ async def create_user(
     try:
         await event.publish(redis_conn)
         res = await asyncio.wait_for(event.receive_message(data["auth"], redis_conn), timeout=30.0)
-        logging.info(f"{res}")
+        res = res.data
+        logging.warn(f"From user service {res}")
         if not res:
-            logging.info(f"{res}")
-            raise RuntimeError("Something bad happened while authenticating")
-        token = create_access_token(data["email"], timedelta(hours=6))
-        return {"access_token": token}
+            logging.warn(f"Got nothing from users service")
+            raise RuntimeError("Something bad happened while creating new user")
+        token = create_access_token({ "email": data["email"] }, timedelta(hours=6))
+        return {"access_token": token, "user": res}
     except Exception as e:
         logging.warn(f"Exception while creating new user: {e}")
         return {"error": 1, "message": str(e)}

@@ -2,6 +2,8 @@
 
 BEGIN;
 
--- XXX Add verifications here.
+SELECT table_name
+  FROM information_schema.tables
+ WHERE table_schema = 'users' AND table_name = 'user';
 
 ROLLBACK;

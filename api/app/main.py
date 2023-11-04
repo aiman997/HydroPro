@@ -3,15 +3,12 @@ import os
 from datetime import datetime
 
 import redis.asyncio as redis
-# from aioprometheus.pusher import Pusher
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from prometheus_fastapi_instrumentator import Instrumentator
-
 from api import admin, auth, user, websocket
 
-PUSH_GATEWAY_ADDR = os.environ.get("PUSH_GATEWAY_ADDR")
 
 root = os.path.dirname(os.path.abspath(__file__))
 app  = FastAPI()

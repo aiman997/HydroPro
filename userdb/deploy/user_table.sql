@@ -5,21 +5,15 @@ BEGIN;
 
 CREATE TABLE users.user(
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    email TEXT UNIQUE NOT NULL,
+    username VARCHAR(255) NOT NULL UNIQUE,
+    email VARCHAR(255) NOT NULL UNIQUE,
     password TEXT NOT NULL,
-    first_name TEXT NOT NULL,
-    last_name TEXT NOT NULL,
-    active BOOLEAN,
-    roles VARCHAR,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    active BOOLEAN DEFAULT TRUE,
     confirmed_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE users.role(
-    id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    name TEXT UNIQUE REFERENCES users.user.roles,
-    description TEXT
 );
 
 COMMIT;

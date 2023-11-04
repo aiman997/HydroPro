@@ -20,4 +20,4 @@ EXPOSE 8000
 WORKDIR /app
 # Run the FastAPI server
 ENTRYPOINT ["python", "-m"] 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--log-level", "trace"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--log-level", "debug"]

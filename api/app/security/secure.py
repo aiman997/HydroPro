@@ -1,8 +1,9 @@
 from fastapi import Depends
 from passlib.context import CryptContext
-
 from starlette.authentication import (
-    AuthenticationBackend, AuthenticationError, SimpleUser,
+    AuthenticationBackend,
+    AuthenticationError,
+    SimpleUser,
     AuthCredentials
 )
 from models.data.sqlalchemy_models import Login
@@ -26,17 +27,17 @@ def authenticate(username, password, account:Login):
     except Exception as e:
         print(e)
         return False
-    
+
 class UsernameAuthBackend(AuthenticationBackend):
-    def __init__(self, username, sess= Depends(sess_db)): 
-        self.username = username    
-        
+    def __init__(self, username, sess= Depends(sess_db)):
+        self.username = username
+
     async def authenticate(self, request):
         if "Authorization" not in request.headers:
             return
 
         auth = request.headers["Authorization"]
-        
+
         try:
             scheme, username = auth.split()
             if scheme.lower().strip() != 'bearer'.strip():
@@ -45,5 +46,5 @@ class UsernameAuthBackend(AuthenticationBackend):
             raise AuthenticationError('Invalid basic auth credentials')
         if not username == self.username:
             return
-       
+
         return AuthCredentials(["authenticated"]), SimpleUser(username)

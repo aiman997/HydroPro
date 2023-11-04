@@ -47,7 +47,7 @@ class Event:
             while True:
                 message = await pubsub.get_message()
                 if message and message["type"] == "message":
-                    msg.data = message["data"]
+                    msg.data = message['data'].decode('utf-8')
                     await redis_conn.delete(channel_name)
                     return msg
                 else:

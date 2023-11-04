@@ -8,23 +8,19 @@ import logging
 import asyncio
 import bcrypt
 import redis.asyncio as redis
-# from aioprometheus.pusher import Pusher
+
 from fastapi import APIRouter, BackgroundTasks, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from lib.event import Event
 
-# PUSH_GATEWAY_ADDR = os.environ.get("PUSH_GATEWAY_ADDR")
-# pusher = Pusher("metric", PUSH_GATEWAY_ADDR, grouping_key={"instance": "api"})
-
 redis_conn = redis.Redis(host="redis", port=6379, decode_responses=False)
 router = APIRouter()
 
 @router.post("/auth")
 async def authenticate_user(email: str, password: str):
-    hashed_password = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
-    data = {'email': email, 'password': hashed_password}
+    data = {'email': email, 'password': password}
     event = Event(stream='api', action='authuser', data=data)
     data['auth'] = await event.generate_hash(redis_conn)
     await event.publish(redis_conn)
