@@ -1,3 +1,4 @@
+import React from 'react';
 import styled from 'styled-components';
 import PhoneIcon from '@mui/icons-material/Phone';
 import EmailIcon from '@mui/icons-material/Email';
@@ -5,6 +6,7 @@ import PlaceIcon from '@mui/icons-material/Place';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LanguageSelector from '../NavBar/LanguageSelector'
+import { useNavigate } from 'react-router-dom';
 
 const Container = styled.div`
     padding-right: 15px;
@@ -49,18 +51,23 @@ const HeaderLinks = styled.ul`
         }
     }
 `;
-
-
-const LinkItem = ({ icon, label, href }) => (
+const LinkItem = ({ icon, label, href, onClick }) => (
     <li>
-        <a href={href || "#"}>
+        <a href={href || "#"} onClick={onClick}>
             {icon && <span className="icon-style">{icon}</span>}
             {label}
         </a>
     </li>
 );
-
+  
+    
 const TopHeader = () => {
+    const navigate = useNavigate();
+
+    // Function to handle navigation
+    const handleAccountClick = () => {
+        navigate('/Login');
+    };
     const leftLinks = [
         { icon: <PhoneIcon className="icon-style" />, label: "+089-481-7366" },
         { icon: <EmailIcon className="icon-style" />, label: "info@robectron.com" },
@@ -70,7 +77,11 @@ const TopHeader = () => {
     const rightLinks = [
         { icon: null, children: <LanguageSelector /> },
         { icon: <AttachMoneyIcon className="icon-style" />, label: "USD" },
-        { icon: <AccountCircleIcon className="icon-style" />, label: "My Account" }
+        {
+            icon: <AccountCircleIcon className="icon-style" />,
+            label: "My Account",
+            onClick: handleAccountClick
+        }
     ];
 
     return (
@@ -92,3 +103,8 @@ const TopHeader = () => {
 };
 
 export default TopHeader;
+
+
+
+
+

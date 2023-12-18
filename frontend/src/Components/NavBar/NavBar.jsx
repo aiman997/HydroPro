@@ -4,8 +4,7 @@ import ShoppingCartOutlinedIcon from '@mui/icons-material/ShoppingCartOutlined';
 import FavoriteBorderTwoToneIcon from '@mui/icons-material/FavoriteBorderTwoTone';
 import PngLogo from './PngLogo';
 import DropdownSearch from './DropdownSearch';
-
-
+import { useNavigate } from 'react-router-dom';
 
 const Container = styled.div `
     height: 60px;
@@ -66,6 +65,12 @@ const MenuItem = styled.div`
 `;
 
 const NavBar = () => {
+    const navigate = useNavigate();
+    
+    const handleIntelliGrowClick = () => {
+        navigate('/intelligrow'); // Navigate to IntelliGrow page
+    }
+
   return (
     <Container>
         <Wrapper>
@@ -92,7 +97,7 @@ const NavBar = () => {
                         <ShoppingCartOutlinedIcon color="action"/>
                     </Badge>
                 </MenuItem>
-                <MenuItem>IntelliGrow</MenuItem>
+                <MenuItem onClick={handleIntelliGrowClick}>IntelliGrow</MenuItem>
             </Right>
         </Wrapper>
     </Container>

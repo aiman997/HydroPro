@@ -2,7 +2,7 @@ import './Header.css'
 import React from 'react'
 import WishCart from '../WishCart/WishCart'
 import logo from '../../Assets/Robectron.png';
-import { Container, Row, Col, Dropdown } from 'react-bootstrap';
+import { Container, Row, Col } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 function Header() {

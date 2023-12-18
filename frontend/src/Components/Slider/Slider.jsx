@@ -1,10 +1,8 @@
-import React from 'react'
+import React, { useState } from 'react';
 import KeyboardArrowRightOutlinedIcon from '@mui/icons-material/KeyboardArrowRightOutlined';
 import KeyboardArrowLeftOutlinedIcon from '@mui/icons-material/KeyboardArrowLeftOutlined';
-import styled from 'styled-components'
-import { useState } from 'react';
+import styled from 'styled-components';
 import { sliderItems } from '../../data';
-
 
 const Container = styled.div`
     width: 100%;
@@ -13,6 +11,7 @@ const Container = styled.div`
     /* background-color: #113e0d; */
     position: relative;
     overflow: hidden;
+    padding-top: 50px;
 `;
 
 const Arrow = styled.div`
@@ -34,10 +33,11 @@ const Arrow = styled.div`
     z-index: 2;
 `;
 
+// Use transient props by prefixing with $
 const Wrapper = styled.div`
     height: 100%;
     display: flex;
-    transform: translateX(${props => props.slideIndex * -100}vw);
+    transform: translateX(${props => props.$slideIndex * -100}vw);
     transition: all 1.5s ease;
 `;
 
@@ -46,7 +46,7 @@ const Slide = styled.div`
     height: 100vh;
     display: flex;
     align-items: center;
-    background-color: #${props=>props.bg};
+    background-color: #${props => props.$bg}; //  to use transient prop $bg
 `;
 
 const ImgContainer = styled.div`
@@ -86,47 +86,43 @@ const Button = styled.button`
     cursor: pointer;
     outline: none;
 `;
- 
+
 const Slider = () => {
     const [slideIndex, setSlideIndex] = useState(0);
+    const totalSlides = sliderItems.length;
+
     const handleClick = (direction) => {
         if (direction === "left") {
-            setSlideIndex(slideIndex > 0 ? slideIndex - 1 : 2); // Adjust number based on your total slides
+            setSlideIndex(slideIndex > 0 ? slideIndex - 1 : totalSlides - 1);
         } else {
-            setSlideIndex(slideIndex < 2 ? slideIndex + 1 : 0); // Adjust number based on your total slides
+            setSlideIndex(slideIndex < totalSlides - 1 ? slideIndex + 1 : 0);
         }
     };
-  return (
-    <Container>
-        <Arrow direction="left" onClick = {() => handleClick("left")}>
-            <KeyboardArrowLeftOutlinedIcon/>
-        </Arrow>
-        <Wrapper slideIndex = {slideIndex}>
-            {sliderItems.map((item) => (
-                <Slide bg={item.bg}>
-                <ImgContainer>
-                    <Image src={item.img}/>
-                </ImgContainer>
-                <InfoContainer>
-                    <Title>
-                        {item.title}
-                    </Title>
-                    <Desc>
-                        {item.desc}
-                    </Desc>
-                    <Button>
-                        Get Now
-                    </Button>
-                </InfoContainer>
-            </Slide>
 
-            ))}
-        </Wrapper>
-        <Arrow direction = "right" onClick = {() => handleClick("right")}>
-            <KeyboardArrowRightOutlinedIcon/>
-        </Arrow>
-    </Container>
-  )
+    return (
+        <Container>
+            <Arrow direction="left" onClick={() => handleClick("left")} aria-label="Previous slide">
+                <KeyboardArrowLeftOutlinedIcon/>
+            </Arrow>
+            <Wrapper $slideIndex={slideIndex}>
+                {sliderItems.map((item, index) => (
+                    <Slide key={index} $bg={item.bg}>
+                        <ImgContainer>
+                            <Image src={item.img} alt={item.title}/>
+                        </ImgContainer>
+                        <InfoContainer>
+                            <Title>{item.title}</Title>
+                            <Desc>{item.desc}</Desc>
+                            <Button>Get Now</Button>
+                        </InfoContainer>
+                    </Slide>
+                ))}
+            </Wrapper>
+            <Arrow direction="right" onClick={() => handleClick("right")} aria-label="Next slide">
+                <KeyboardArrowRightOutlinedIcon/>
+            </Arrow>
+        </Container>
+    );
 }
 
-export default Slider
+export default Slider;
