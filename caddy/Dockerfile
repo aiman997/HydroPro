@@ -1,8 +1,8 @@
-FROM caddy/caddy:2.7.4-alpine
+FROM caddy/caddy:latest
 
 RUN mkdir /app
-COPY start.sh /app/start.sh
 
+COPY start.sh /app/start.sh
 COPY Caddyfile /etc/caddy/Caddyfile
 
 CMD ["sh", "/app/start.sh"]

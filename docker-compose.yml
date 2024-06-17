@@ -1,29 +1,6 @@
 version: '3.9'
 
 services:
-  crtapi:
-    build:
-      context: ./crtapi
-      dockerfile: Dockerfile
-    init: true
-    tty: true
-    container_name: crtapi
-    restart: unless-stopped
-    volumes:
-      - ./crtapi:/app
-    ports:
-      - 8003:8003
-    environment:
-      PUSH_GATEWAY_ADDR: "${PUSH_GATEWAY_ADDR}"
-      PORT: "${METRICS_PORT}"
-      LOG_LEVEL: "${LOG_LEVEL}"
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8003/health" ]
-      interval: 5m
-      timeout: 5s
-      retries: 3
-      start_period: 15s
-
   users:
     build:
       context: ./
@@ -237,8 +214,8 @@ services:
     restart: always
     image: postgres:alpine
     volumes:
-      - ./hydrodb/init.sql:/docker-entrypoint-initdb.d/init.sql
-      - ./hydrodb/data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./postgres/data:/var/lib/postgresql/data
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
