@@ -1,0 +1,10 @@
+fastapi
+fastapi-utils
+websockets
+uvicorn
+
+bcrypt
+pyjwt
+
+redis
+prometheus-fastapi-instrumentator

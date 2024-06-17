@@ -1,2 +1,0 @@
-neutralVoltage=2531
-acidVoltage=3024
